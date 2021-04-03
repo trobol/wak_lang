@@ -1,6 +1,8 @@
-#include <wak_lang/timers.h>
+#include <wak_lang/util/timers.h>
+#include <wak_lang/util/assert.h>
+
 #include <time.h>
-#include <wak_lang/assert.h>
+
 
 const char* TIMER_NAMES[TIMER_ID_COUNT] = {
 	"TOTAL",
