@@ -2,7 +2,8 @@
 #define _WAK_LANG_KV_MAP_H
 #include <stdlib.h>
 #include <string.h>
-#include <wak_lang/assert.h>
+#include <wak_lang/util/assert.h>
+#include <wak_lang/util/mem.h>
 
 typedef struct kv_pair {
 	const char* key;
@@ -15,10 +16,8 @@ typedef struct kv_map {
 	int *values;
 } kv_map;
 
-// pairs array will be sorted
-kv_map kv_map_init(kv_pair pairs[], int entry_count) {
-	int *values = (int*)malloc(entry_count);
-	const char**keys = (const char**)malloc(entry_count);
+kv_map* kv_map_new(kv_pair pairs[], size_t entry_count) {
+
 
 	// TODO: this is bubble sort but we shouldnt have many keys so not a problem for now
 
@@ -39,18 +38,25 @@ kv_map kv_map_init(kv_pair pairs[], int entry_count) {
 			}
 		}
 	}
-
+	
+	kv_map* map = (kv_map*)malloc(sizeof(kv_map));
+	
+	map->values = alloc_array(entry_count, int);
+	map->keys = alloc_array(entry_count, const char*);
+	map->entry_count = entry_count;
+	
 	for(size_t i = 0; i < entry_count; i++) {
-		values[i] = pairs[i].value;
-		keys[i] = pairs[i].key;
+		map->values[i] = pairs[i].value;
+		map->keys[i] = pairs[i].key;
 	}
 
-	return (kv_map){entry_count, keys, values};
+	return map;
 }
 
 void kv_map_free(kv_map* map) {
 	free(map->keys);
 	free(map->values);
+	free(map);
 }
 
 int kv_map_find(kv_map* map, const char* key) {

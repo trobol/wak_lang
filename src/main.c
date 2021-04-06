@@ -2,7 +2,18 @@
 #include <wak_lang/util/timers.h>
 #include <wak_lang/util/file.h>
 
+#include <wak_lang/lexer.h>
 #include <time.h>
+
+void print_token(Token* tok) {
+	if (tok->type == TOKEN_TYPE_TOKEN) {
+		printf("%s ", token_value_to_name(tok->token));
+	} else if (tok->type == TOKEN_TYPE_IDENTIFIER) {
+		printf("%s ", tok->identifier);
+	} else if (tok->type == TOKEN_TYPE_LITERAL) {
+		printf("%s ", tok->literal.str);
+	}
+}
 
 int main(int argc, char *argv[]) {
 	//_wak_assert_msg(0, "test");
@@ -25,13 +36,22 @@ int main(int argc, char *argv[]) {
 
 	timer_start(TIMER_LEXETIZE);
 
-	
+	Token_Module module = lexetize(src_mmf.data, src_mmf.data+src_mmf.length);
+		
+	for (Token* tok = module.tokens->start; tok < module.tokens->end; tok++) {	
+		print_token(tok);	
+	}
 
 	// free file resources
 	fd_mem_unmap(&src_mmf);
 	fd_close(src_fd);
 	timer_end(TIMER_LEXETIZE);
 
+	timer_start(TIMER_PARSE);
+
+
+
+	timer_end(TIMER_PARSE);
 
 
 	timer_end(TIMER_TOTAL);

@@ -1,6 +1,6 @@
 #ifndef _WAK_LANG_FILE_H
 #define _WAK_LANG_FILE_H
-
+#include <stddef.h>
 
 // FILE DESTRIPTORS
 typedef int file_descriptor;
@@ -15,7 +15,7 @@ int fd_size();
 
 typedef struct mmapped_file {
 	const char* data;
-	int size;
+	size_t length;
 } mmapped_file;
 
 mmapped_file fd_mem_map(file_descriptor fd);

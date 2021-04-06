@@ -41,9 +41,9 @@ mmapped_file fd_mem_map(file_descriptor fd) {
 
 
 int fd_mem_unmap(mmapped_file* mmf) {
-	int err = munmap((void *)mmf->data, mmf->size);
+	int err = munmap((void *)mmf->data, mmf->length);
 	mmf->data = 0;
-	mmf->size = 0;
+	mmf->length = 0;
 	return err;
 }
 

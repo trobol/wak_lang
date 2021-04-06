@@ -1,4 +1,4 @@
-#include <wak_lang/util/vector.h>
+#include <wak_lang/util/array.h>
 #include <wak_lang/util/mem.h>
 
 #include <stdlib.h>
@@ -7,48 +7,47 @@
 #include <string.h>
 
 
-vector* vector_new(size_t type_size) {
-	vector* v = malloc(sizeof(vector));
-	*v = (vector){type_size, 0, 0, 0};
+array* array_new(size_t type_size) {
+	array* v = malloc(sizeof(array));
+	*v = (array){type_size, 0, 0, 0};
 	v->type_size = type_size;
 	return v;
 }
 
-vector* vector_new_count(size_t count, size_t type_size) {
-	vector* v = vector_new(type_size);
-	vector_expand(v, count);
+array* array_new_count(size_t count, size_t type_size) {
+	array* v = array_new(type_size);
+	array_expand(v, count);
 	v->end = v->capacity;
 	return v;
 }
 
-void vector_free(vector* v) {
+void array_free(array* v) {
 	free(v->start);
 	free(v);
 }
 
-// the number of elements in the vector
-size_t vector_count(vector* v) {
+size_t array_count(array* v) {
 	return ((char*)v->end - (char*)v->start) / v->type_size;
 }
 
-void vector_append(vector* v, const void* val) {
+void array_append(array* v, const void* val) {
 	if ((char*)v->capacity >= (char*)v->end)
-		vector_expand(v, 10);
+		array_expand(v, 10);
 	memcpy(v->end, val, v->type_size);
+	v->end = (char*)v->end + v->type_size;
 }
 
-void vector_fill(vector* v, const void* val) {
+void array_fill(array*  v, const void* val) {
 	for (char* itr = (char*)v->start; itr < (char*)v->end; itr+= v->type_size) {
 		memcpy(itr, val, v->type_size); 
 	}
 }
 
 
-
-
-void vector_expand(vector* v, size_t count) {
-	alloc_prevent_overflow(count, v->type_size);
-	size_t alloc_size = count * v->type_size;
+void array_expand(array* v, size_t count) {
+	size_t new_count = array_count(v) + count;
+	alloc_prevent_overflow(new_count, v->type_size);
+	size_t alloc_size = new_count * v->type_size;
 	void* ptr;
 	if (v->start == NULL) {
 		ptr = malloc(alloc_size);

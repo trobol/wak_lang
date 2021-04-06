@@ -1,5 +1,6 @@
 #ifndef _WAK_LANG_TOKEN_H
 #define _WAK_LANG_TOKEN_H
+#include <stddef.h>
 #include <stdint.h>
 
 typedef enum Token_Value {
@@ -57,6 +58,18 @@ typedef enum Token_Value {
 
 } Token_Value;
 
+typedef enum Token_Literal_Type
+{
+	LITERAL_TYPE_NUM,
+	LITERAL_TYPE_STRING,
+	LITERAL_TYPE_CHAR
+} Token_Literal_Type;
+
+typedef struct Token_Literal
+{
+	Token_Literal_Type type;
+	const char* str;
+} Token_Literal;
 
 typedef enum Token_Type
 {
@@ -69,30 +82,20 @@ typedef struct Token
 {
 	Token_Type type;
 	union {
-		Token_Value value;
-		uint64_t index;
+		Token_Value token;
+		const char* identifier;
+		Token_Literal literal;
 	};
 } Token;
 
+static inline Token make_token_token(Token_Value value) {
+	return (Token){TOKEN_TYPE_TOKEN, value};
+}
+static inline Token make_token_literal(size_t index) {
+	return (Token){TOKEN_TYPE_LITERAL, index};
+}
 
-typedef enum Token_Literal_Type
-{
-	LITERAL_TYPE_FLOAT,
-	LITERAL_TYPE_UINT,
-	LITERAL_TYPE_STRING,
-	LITERAL_TYPE_CHAR
-} Token_Literal_Type;
 
-typedef struct Token_Literal
-{
-	Token_Literal_Type type;
-	union {
-		char char_val;
-		char *string_val;
-		unsigned long uint_val;
-		double float_val;
-	};
-} Token_Literal;
 
 typedef struct Token_Pos
 {
