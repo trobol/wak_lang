@@ -7,5 +7,5 @@ for this reason they are dynamically allocated,
 because of the nature of them most of the probelems with dynamic allocation do not apply
 - fragmentation: there won't be a large number of these and they wont be freed very often
 - forgeting to free: they underlying resource must be freed anyway
-- poor cache utilization: this might be a problem, but because most operations are on a single array in most situations this wont apply
+- poor cache utilization: this might be a problem, but because most operations are on a single vector in most situations this wont apply
 

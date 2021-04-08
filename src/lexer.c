@@ -93,8 +93,8 @@ Token_Module lexetize(const char* start, const char* end) {
 
 		if(token.type != TOKEN_TYPE_TOKEN || token.token != TOKEN_EMPTY)
 		{
-			array_token_append(lexer.module.tokens, token);
-			array_pos_append(lexer.module.positions, lexer.token_pos);
+			vector_token_append(lexer.module.tokens, token);
+			vector_pos_append(lexer.module.positions, lexer.token_pos);
 			i++;
 		}
 
@@ -131,7 +131,7 @@ Token lexer_parse_identifier(Lexer_Data* lexer) {
 	int tok = const_str_map_find(lexer->map, str);
 
 	if (tok == -1) {
-		array_str_append(lexer->module.identifers, str);
+		vector_str_append(lexer->module.identifers, str);
 		return (Token){TOKEN_TYPE_IDENTIFIER, .identifier=str};
 	} else {
 		free(str);
@@ -275,7 +275,7 @@ Token lexer_append_literal(Lexer_Data* lexer, const char* start, size_t count, T
 
 	Token_Literal literal = (Token_Literal){type, dst};
 
-	array_literal_append(lexer->module.literals, literal);
+	vector_literal_append(lexer->module.literals, literal);
 
 	return (Token){TOKEN_TYPE_LITERAL, .literal=literal};
 }
