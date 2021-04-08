@@ -3,6 +3,15 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/*
+Generic array
+
+
+Improvements:
+memcpy can (probabbly) be optimzied away,
+would require some inling or additional "templated" functions
+
+*/
 
 typedef struct {
 	size_t type_size;
@@ -26,7 +35,7 @@ void array_expand(array*, size_t count);
 
 
 
-#define define_array(NAME, TYPE) \
+#define DEFINE_ARRAY(NAME, TYPE) \
 typedef struct { \
 	size_t type_size; \
 	TYPE* start; \

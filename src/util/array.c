@@ -37,7 +37,7 @@ void array_append(array* v, const void* val) {
 	v->end = (char*)v->end + v->type_size;
 }
 
-void array_fill(array*  v, const void* val) {
+void array_fill(array* v, const void* val) {
 	for (char* itr = (char*)v->start; itr < (char*)v->end; itr+= v->type_size) {
 		memcpy(itr, val, v->type_size); 
 	}

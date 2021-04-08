@@ -1,25 +1,33 @@
-#ifndef _WAK_LANG_KV_MAP_H
-#define _WAK_LANG_KV_MAP_H
-#include <stdlib.h>
-#include <string.h>
+#ifndef _WAK_LANG_UTIL_CONST_STR_MAP_H
+#define _WAK_LANG_UTIL_CONST_STR_MAP_H
 #include <wak_lang/util/assert.h>
 #include <wak_lang/util/mem.h>
 
-typedef struct kv_pair {
-	const char* key;
-	int value;
-} kv_pair;
+#include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
 
-typedef struct kv_map {
+/*
+String map that is initialized with all its values
+it holds an unsigned 64 bit integer
+*/
+
+typedef struct {
+	const char* key;
+	uint64_t value;
+} const_str_map_pair;
+
+
+typedef struct {
 	size_t entry_count;
 	const char* *keys;
-	int *values;
-} kv_map;
-
-kv_map* kv_map_new(kv_pair pairs[], size_t entry_count) {
+	uint64_t* values;
+} const_str_map;
 
 
-	// TODO: this is bubble sort but we shouldnt have many keys so not a problem for now
+const_str_map* const_str_map_new(const_str_map_pair pairs[], size_t entry_count) {
+
+	// Note: this is bubble sort but we shouldnt have many keys so not a problem for now
 
 	for (size_t left = 0, right = entry_count - 1; right > 0;
 		     right = left, left = 0)
@@ -29,19 +37,18 @@ kv_map* kv_map_new(kv_pair pairs[], size_t entry_count) {
 			int cmp = strcmp(pairs[i + 1].key, pairs[i].key);
 			if (cmp < 0)
 			{
-				kv_pair tmp_val = pairs[i];
+				const_str_map_pair tmp_val = pairs[i];
 				pairs[i] = pairs[i + 1];
 				pairs[i + 1] = tmp_val;
 				left = i;
-			} else if (cmp == 0) {
-				printf("map contains matching keys\n");
 			}
+			wak_assert_msg(cmp != 0, "map contains matching keys");
 		}
 	}
 	
-	kv_map* map = (kv_map*)malloc(sizeof(kv_map));
+	const_str_map* map = (const_str_map*)malloc(sizeof(const_str_map));
 	
-	map->values = alloc_array(entry_count, int);
+	map->values = alloc_array(entry_count, uint64_t);
 	map->keys = alloc_array(entry_count, const char*);
 	map->entry_count = entry_count;
 	
@@ -53,13 +60,13 @@ kv_map* kv_map_new(kv_pair pairs[], size_t entry_count) {
 	return map;
 }
 
-void kv_map_free(kv_map* map) {
+void const_str_map_free(const_str_map* map) {
 	free(map->keys);
 	free(map->values);
 	free(map);
 }
 
-int kv_map_find(kv_map* map, const char* key) {
+uint64_t const_str_map_find(const_str_map* map, const char* key) {
 	int l = 0;
 	int r = map->entry_count - 1;
 	while (l <= r)

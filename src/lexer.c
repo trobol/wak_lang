@@ -1,7 +1,7 @@
 #include <wak_lang/lexer.h>
 #include <wak_lang/util/assert.h>
 #include <wak_lang/util/mem.h>
-#include <wak_lang/util/kv_map.h>
+#include <wak_lang/util/const_str_map.h>
 
 
 #include <stdbool.h>
@@ -12,7 +12,7 @@ typedef struct Lexer_Data {
 	const char* start;
 	const char* end;
 	const char* read;
-	kv_map* map;
+	const_str_map* map;
 	size_t line_num, char_num;
 	Token_Pos token_pos;
 	Token_Module module;
@@ -128,7 +128,7 @@ Token lexer_parse_identifier(Lexer_Data* lexer) {
 	char* str = malloc_str(count);
 	memcpy(str, start, count);
 
-	int tok = kv_map_find(lexer->map, str);
+	int tok = const_str_map_find(lexer->map, str);
 
 	if (tok == -1) {
 		array_str_append(lexer->module.identifers, str);
@@ -308,7 +308,7 @@ void lexer_breakline(Lexer_Data* lexer) {
 	lexer->line_num++;
 }
 
-kv_pair token_keywords[] = {
+const_str_map_pair token_keywords[] = {
 	{"struct", TOKEN_KEYWORD_STRUCT},
 	{"type", TOKEN_KEYWORD_TYPE},
 	{"if", TOKEN_KEYWORD_IF},
@@ -321,10 +321,10 @@ kv_pair token_keywords[] = {
 	{"null", TOKEN_KEYWORD_NULL}
 };
 
-#define TOKEN_KEYWORD_COUNT sizeof(token_keywords)/sizeof(kv_pair)
+#define TOKEN_KEYWORD_COUNT sizeof(token_keywords)/sizeof(token_keywords[0])
 
 
 Lexer_Data lexer_init(const char* start, const char* end) {
-	kv_map* map = kv_map_new(token_keywords, TOKEN_KEYWORD_COUNT);
+	const_str_map* map = const_str_map_new(token_keywords, TOKEN_KEYWORD_COUNT);
 	return (Lexer_Data){start, end, start, map, 0, 0, 0};
 }

@@ -3,10 +3,10 @@
 #include <wak_lang/util/array.h>
 #include <wak_lang/token.h>
 
-define_array(array_token, Token);
-define_array(array_pos, Token_Pos);
-define_array(array_literal, Token_Literal);
-define_array(array_str, const char*);
+DEFINE_ARRAY(array_token, Token);
+DEFINE_ARRAY(array_pos, Token_Pos);
+DEFINE_ARRAY(array_literal, Token_Literal);
+DEFINE_ARRAY(array_str, const char*);
 
 typedef struct Token_Module {
 	array_token* tokens;
