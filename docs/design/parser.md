@@ -12,10 +12,15 @@ A statement can be:
 - block
 
 
+
+expressions:
+
+
+## block
 A block can be:
 - function (`void something() {}`)
 - if/else (`if (a) {}`)
 - switch
 
-
-expressions:
+- A block has a new variable context.
+- ?All blocks start with `{` and end with `}`?
