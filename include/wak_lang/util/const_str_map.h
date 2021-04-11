@@ -9,7 +9,8 @@
 
 /*
 String map that is initialized with all its values
-it holds an unsigned 64 bit integer
+holds an unsigned 64 bit integer
+holds internal copy of strings
 */
 
 typedef struct {
