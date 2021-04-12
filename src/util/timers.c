@@ -37,6 +37,7 @@ void timer_report(Timer_ID id) {
 }
 
 void timer_report_all() {
+	printf("\n\nTimer report:\n");
 	for(int i = 0; i < TIMER_ID_COUNT; i++)
 		timer_report((Timer_ID)i);
 }

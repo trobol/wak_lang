@@ -1,11 +1,13 @@
-
-func multiply(a: i64, b: i64) i64 {
+/*
+func multiply(a: i32, b: i32) i32 {
 	result := a * b
 	return result
 }
+/**/
+*/
 
-func main() i64 {
-
-	c := 2
+func main() i32 {
+	a : func;
+	c : i32 = 2
 	return c
 }

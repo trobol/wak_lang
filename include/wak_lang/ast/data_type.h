@@ -1,0 +1,13 @@
+#ifndef _WAK_LANG_AST_TYPE_H
+#define _WAK_LANG_AST_TYPE_H
+
+typedef enum {
+	AST_DATA_TYPE_UNKNOWN,
+	AST_DATA_TYPE_VOID,
+	AST_DATA_TYPE_I32,
+	AST_DATA_TYPE_F32,
+	AST_DATA_TYPE_BOOL
+} AST_Data_Type;
+
+
+#endif

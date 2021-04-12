@@ -94,5 +94,5 @@ const char *token_value_to_name(Token_Value t)
 }
 
 const char *token_type_to_name(Token_Type t) {
-
+	return "";
 }

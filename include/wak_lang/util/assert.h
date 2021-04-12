@@ -7,7 +7,7 @@
 #define _wak_assert_msg(v, msg)
 #else
 #include "_debug_break.h"
-static void _wak_assert_fail(const char* expr, const char* msg, const char* file, int line) {
+static inline void _wak_assert_fail(const char* expr, const char* msg, const char* file, int line) {
 	printf("%s ( %s ) at: %s:%d\n", msg, expr, file, line);
 	fflush(stdout); 
 	debug_break();

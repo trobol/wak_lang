@@ -2,6 +2,7 @@
 #define _WAK_LANG_TOKEN_H
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum Token_Value {
 	TOKEN_EOF = 0,
@@ -54,6 +55,11 @@ typedef enum Token_Value {
 	TOKEN_KEYWORD_TRUE,
 	TOKEN_KEYWORD_FALSE,
 
+	TOKEN_KEYWORD_I32,
+	TOKEN_KEYWORD_F32,
+	TOKEN_KEYWORD_BOOL,
+	TOKEN_KEYWORD_VOID,
+
 	TOKEN_ERROR,
 
 } Token_Value;
@@ -62,13 +68,17 @@ typedef enum Token_Literal_Type
 {
 	LITERAL_TYPE_NUM,
 	LITERAL_TYPE_STRING,
-	LITERAL_TYPE_CHAR
+	LITERAL_TYPE_CHAR,
+	LITERAL_TYPE_BOOL
 } Token_Literal_Type;
 
 typedef struct Token_Literal
 {
 	Token_Literal_Type type;
-	const char* str;
+	union {
+		const char* v_str;
+		bool v_bool;
+	};
 } Token_Literal;
 
 typedef enum Token_Type
@@ -89,10 +99,16 @@ typedef struct Token
 } Token;
 
 static inline Token make_token_token(Token_Value value) {
-	return (Token){TOKEN_TYPE_TOKEN, value};
+	return (Token){TOKEN_TYPE_TOKEN, .token=value};
 }
+/*
 static inline Token make_token_literal(size_t index) {
 	return (Token){TOKEN_TYPE_LITERAL, index};
+}
+*/
+
+static inline bool is_token_token_val(Token tok, Token_Value value) {
+	return tok.type == TOKEN_TYPE_TOKEN && tok.token == value;
 }
 
 
@@ -101,6 +117,8 @@ typedef struct Token_Pos
 {
 	uint32_t line_number;
 	uint32_t character_number;
+	const char* start;
+	const char* end;
 } Token_Pos;
 
 const char *token_value_to_name(Token_Value t);

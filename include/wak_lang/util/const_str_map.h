@@ -74,8 +74,6 @@ uint64_t const_str_map_find(const_str_map* map, const char* key) {
 	{
 		int m = l + (r - l) / 2;
 
-		const char *lhs = map->keys[m];
-		const char *rhs = key;
 		int cmp = strcmp(map->keys[m], key);
 		if (cmp < 0)
 			l = m + 1;
