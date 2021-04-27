@@ -1,5 +1,5 @@
-#ifndef _WAK_LANG_AST_STATEMENT_ERROR_H
-#define _WAK_LANG_AST_STATEMENT_ERROR_H
+#ifndef _WAK_LANG_AST_ERROR_H
+#define _WAK_LANG_AST_ERROR_H
 
 typedef enum {
 	AST_ERROR_NONE,
@@ -9,13 +9,12 @@ typedef enum {
 	AST_ERROR_INVALID_SYNTAX,
 } AST_Error_Code;
 
-typedef struct AST_Statement_Error {
+typedef struct AST_Error {
 	AST_Error_Code code;
 	const char* msg;
 	const char* file;
 	unsigned int line;
-} AST_Statement_Error;
-
+} AST_Error;
 
 
 

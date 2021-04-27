@@ -1,9 +1,11 @@
 #ifndef _WAK_LANG_PARSER_H
 #define _WAK_LANG_PARSER_H
 
+#include <wak_lang/ast/error.h>
 #include <wak_lang/ast/block.h>
 #include <wak_lang/ast/statement.h>
 #include <wak_lang/token_module.h>
+
 
 typedef struct
 {
@@ -11,6 +13,7 @@ typedef struct
 	const char* path;
 	
 	AST_Block *top_block;
+	vector_str* str_table;
 
 } Parsed_Module;
 

@@ -8,7 +8,7 @@ Generic vector
 
 
 Improvements:
-memcpy can (probabbly) be optimzied away,
+memcpy can (probably) be optimized away,
 would require some inling or additional "templated" functions
 
 */

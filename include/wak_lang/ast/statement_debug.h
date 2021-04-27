@@ -6,8 +6,8 @@
 static inline const char* get_statement_name(AST_Statement statement) {
 	switch (statement.type)
 	{
-	case AST_STATEMENT_TYPE_ERROR:
-		return "ERROR";
+	case AST_STATEMENT_TYPE_EMPTY:
+		return "EMPTY";
 	case AST_STATEMENT_TYPE_RETURN:
 		return "RETURN";
 	case AST_STATEMENT_TYPE_ASSIGN:

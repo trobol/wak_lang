@@ -7,7 +7,9 @@ func multiply(a: i32, b: i32) i32 {
 */
 
 func main() i32 {
-	a : func;
-	c : i32 = 2
-	return c
+	c : i32 = 2;
+	return c;
 }
+
+
+asdsad

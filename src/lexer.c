@@ -285,7 +285,6 @@ Token lexer_parse_dot(Lexer_Data* lexer) {
 	wak_assert(lexer_peek_char(lexer) == '.');
 
 	char c = lexer_peek_char_n(lexer, 1);
-	if (c == 0) return make_token_token(TOKEN_EOF);
 
 	if (c >= '0' && c <= '9') {
 		return lexer_parse_num_literal(lexer);
