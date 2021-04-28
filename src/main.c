@@ -42,7 +42,9 @@ int main(int argc, char *argv[]) {
 
 	Token_Module module = lexetize(src_mmf.data, src_mmf.data+src_mmf.length);
 	
-	printf("\n\n TOKENIZED OUTPUT: %u\n",  vector_count((vector*)module.tokens));
+	timer_end(TIMER_LEXETIZE);
+
+	printf("\n\n TOKENIZED OUTPUT: %zu\n",  vector_count((vector*)module.tokens));
 	for (size_t i = 0; i < vector_count((vector*)module.tokens); i++) {
 		Token tok = module.tokens->start[i];
 		Token_Pos pos = module.positions->start[i];
@@ -50,7 +52,7 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	timer_end(TIMER_LEXETIZE);
+	
 
 	timer_start(TIMER_PARSE);
 	printf("\n\nPARSER OUTPUT:\n");
