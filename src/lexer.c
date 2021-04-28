@@ -2,11 +2,37 @@
 #include <wak_lang/util/assert.h>
 #include <wak_lang/util/mem.h>
 #include <wak_lang/util/const_str_map.h>
-
+#include <wak_lang/util/def.h>
 
 #include <stdbool.h>
 #include <string.h>
 
+
+typedef struct wak_lex_state {
+	const char* limit;
+
+	const char* line_start;
+	size_t line_num;
+	Token_Pos token_pos;
+
+	const_str_map* tok_map;
+
+	vector_str* identifiers;
+	vector_literal* literals;
+	vector_token* tokens;
+	vector_pos* positions;
+
+} wak_lex_state;
+
+/*
+only the hottest variables,
+ideally should always remain in registers
+*/
+#define WAK_LEX_PARAMS \
+	wak_lex_state* state, const char* ptr
+
+#define WAK_LEX_ARGS \
+	state, ptr
 
 typedef struct Lexer_Data {
 	const char* start;
@@ -18,101 +44,111 @@ typedef struct Lexer_Data {
 
 	vector_str* identifiers;
 	vector_literal* literals;
+
 } Lexer_Data;
 
 
-char lexer_peek_char(Lexer_Data* lexer);
-void lexer_pop_char(Lexer_Data* lexer);
-char lexer_peek_char_n(Lexer_Data* lexer, size_t n);
-void lexer_pop_char_n(Lexer_Data* lexer, size_t n);
-void lexer_breakline(Lexer_Data* lexer);
-Token lexer_append_literal_str(Lexer_Data* lexer, const char* start, size_t count, Token_Literal_Type type);
-Token lexer_append_literal_bool(Lexer_Data* lexer, Token_Value val);
-Token lexer_append_identifier(Lexer_Data* lexer, const char* str);
+WAK_FORCEINLINE void lex_breakline(WAK_LEX_PARAMS);
 
-Token lexer_next(Lexer_Data* lexer);
+const char* lexer_next(WAK_LEX_PARAMS);
 
-Lexer_Data lexer_init(const char* start, const char* end);
 
-Token lexer_parse_identifier(Lexer_Data* lexer);
-Token lexer_parse_num_literal(Lexer_Data* lexer);
-Token lexer_parse_string_literal(Lexer_Data* lexer);
-Token lexer_parse_char_literal(Lexer_Data* lexer);
-Token lexer_parse_slash(Lexer_Data* lexer);
-Token lexer_parse_linebreak(Lexer_Data* lexer);
-Token lexer_parse_dot(Lexer_Data* lexer);
-Token lexer_parse_single_comment(Lexer_Data* lexer);
-Token lexer_parse_multi_comment(Lexer_Data* lexer);
+wak_lex_state lex_state_init(const char* ptr, const char* limit);
 
-Token lexer_next(Lexer_Data* lexer) {
 
-	char c;
+WAK_FORCEINLINE static void lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v);
+WAK_FORCEINLINE static void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Literal_Type type);
+WAK_FORCEINLINE static void lex_append_tok_literal_str(WAK_LEX_PARAMS, const char* str, Token_Literal_Type type);
+WAK_FORCEINLINE static void lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token);
+WAK_FORCEINLINE static void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, const char* start, const char* end);
 
-	// skip spaces and tabs
-	while( (c = lexer_peek_char(lexer), c == ' ' || c == '\t') ) {
-		lexer_pop_char(lexer);
+const char* lex_parse_eof(WAK_LEX_PARAMS);
+const char* lex_parse_identifier(WAK_LEX_PARAMS);
+const char* lex_parse_num_literal(WAK_LEX_PARAMS);
+const char* lex_parse_string_literal(WAK_LEX_PARAMS);
+const char* lex_parse_char_literal(WAK_LEX_PARAMS);
+const char* lex_parse_slash(WAK_LEX_PARAMS);
+const char* lex_parse_linebreak(WAK_LEX_PARAMS);
+const char* lex_parse_dot(WAK_LEX_PARAMS);
+const char* lex_parse_single_comment(WAK_LEX_PARAMS);
+const char* lex_parse_multi_comment(WAK_LEX_PARAMS);
+
+const char* lex_make_error(WAK_LEX_PARAMS);
+
+WAK_NOINLINE
+const char* lex_dispatch(WAK_LEX_PARAMS) {
+	
+
+	if (WAK_UNLIKELY(ptr >= state->limit)) {
+		return ptr;
 	}
 
-	lexer->token_pos.line_number = lexer->line_num;
-	lexer->token_pos.character_number = lexer->char_num;
-	lexer->token_pos.start = lexer->read;
+	return lexer_next(WAK_LEX_ARGS);
+}
 
-	switch (c)
+
+
+
+
+
+Token_Module lexetize(const char* ptr, const char* limit) {
+	wak_lex_state state_val = lex_state_init(ptr, limit);
+	wak_lex_state* state = &state_val;
+
+	ptr = lex_dispatch(WAK_LEX_ARGS);
+
+
+	return token_module_init(ptr, limit, state->tokens, state->positions, state->literals, state->identifiers);
+}
+
+WAK_FORCEINLINE
+void lex_store_tokpos(WAK_LEX_PARAMS) {
+	state->token_pos.line_number = state->line_num;
+	state->token_pos.character_number = (uint32_t)(ptr-state->line_start);
+	state->token_pos.start = ptr;
+	// line start?
+}
+
+
+
+const char* lexer_next(WAK_LEX_PARAMS) {
+
+	// skip spaces and tabs
+	// this should not overflow because there should be an EOF at end
+	while( *ptr == ' ' || *ptr == '\t') ptr++;
+	
+	// the begining of our token is its position
+	lex_store_tokpos(WAK_LEX_ARGS);
+
+	switch (*ptr)
 	{
 		case 0:
-			return make_token_token(TOKEN_EOF);
+			return lex_parse_eof(WAK_LEX_ARGS);
 		case 'a' ... 'z':
 		case 'A' ... 'Z':
 		case '_':
-			return lexer_parse_identifier(lexer);
+			return lex_parse_identifier(WAK_LEX_ARGS);
 		case '.':
-			return lexer_parse_dot(lexer);
+			return lex_parse_dot(WAK_LEX_ARGS);
 		case '0' ... '9':
-			return lexer_parse_num_literal(lexer);
+			return lex_parse_num_literal(WAK_LEX_ARGS);
 		case '"':
-			return lexer_parse_string_literal(lexer);
+			return lex_parse_string_literal(WAK_LEX_ARGS);
 		case '\'':
-			return lexer_parse_char_literal(lexer);
+			return lex_parse_char_literal(WAK_LEX_ARGS);
 		case '/':
-			return lexer_parse_slash(lexer);
+			return lex_parse_slash(WAK_LEX_ARGS);
 		case '\r':
 		case '\n':
-			return lexer_parse_linebreak(lexer);
+			return lex_parse_linebreak(WAK_LEX_ARGS);
 		default:
-			lexer_pop_char(lexer);
-			return make_token_token(c);
+			ptr++;
+			return lex_dispatch(WAK_LEX_ARGS);
 	}
 }
 
 
 
-Token_Module lexetize(const char* start, const char* end) {
-	Token token;
-	Lexer_Data lexer = lexer_init(start, end);
-	lexer.identifiers = vector_str_new();
-	lexer.literals = vector_literal_new();
-	
-	vector_token* tokens = vector_token_new();
-	vector_pos* positions = vector_pos_new();
-
-	size_t i =0;
-	do
-	{
-		token = lexer_next(&lexer);
-
-		if(token.type != TOKEN_TYPE_TOKEN || token.token != TOKEN_EMPTY)
-		{
-			vector_token_append(tokens, token);
-			lexer.token_pos.end = lexer.read;
-			vector_pos_append(positions, lexer.token_pos);
-			i++;
-		}
-
-	} while(token.type != TOKEN_TYPE_TOKEN || token.token != TOKEN_EOF);
-
-
-	return token_module_init(start, end, tokens, positions, lexer.literals, lexer.identifiers);
-}
 
 bool is_identifier_character(char c)
 {
@@ -122,224 +158,192 @@ bool is_identifier_character(char c)
 			 c == '_';
 }
 
-Token lexer_parse_identifier(Lexer_Data* lexer) {
-	char c = lexer_peek_char(lexer);
+const char* lex_parse_identifier(WAK_LEX_PARAMS) {
+	wak_assert(is_identifier_character(*ptr));
 
-	wak_assert(is_identifier_character(c));
-
-	const char* start = lexer->read;
-	size_t count = 0;
+	const char* start = ptr;
 	do {
-		lexer_pop_char(lexer);
-		c = lexer_peek_char(lexer);
-		count++;
-	} while(is_identifier_character(c));
+		ptr++;
+	} while(is_identifier_character(*ptr));
 
-
-	char* str = malloc_str(count);
-	memcpy(str, start, count);
-
-	int tok = const_str_map_find(lexer->map, str);
+	uint32_t len = (uint32_t)(ptr - start);
+	int tok = const_str_map_find_len(state->tok_map, start, len);
 
 	if (tok == -1) {
-		vector_str_append(lexer->identifiers, str);
-		return (Token){TOKEN_TYPE_IDENTIFIER, .identifier=str};
+		lex_append_tok_identifier_substr(WAK_LEX_ARGS, start, ptr);
 	} else {
-		free(str);
 		if (tok == TOKEN_KEYWORD_TRUE || tok == TOKEN_KEYWORD_FALSE)
-			return lexer_append_literal_bool(lexer, tok);
+			lex_append_tok_literal_bool(WAK_LEX_ARGS, tok);
 		else
-			return make_token_token(tok);
+			lex_append_tok_val(WAK_LEX_ARGS, tok);
 	}
+	return lex_dispatch(WAK_LEX_ARGS);
 }
 
 
-Token lexer_parse_num_literal(Lexer_Data* lexer) {
-	const char* start = lexer->read;
-	char c = lexer_peek_char(lexer);
-	size_t count = 0;
-	while (( c >= '0' && c <= '9' ) ||
-			 c == '.' ||
-			 c == 'x' ||
-			 c == 'b') {
-		lexer_pop_char(lexer);
-		c = lexer_peek_char(lexer);
-		count++;
+const char* lex_parse_num_literal(WAK_LEX_PARAMS) {
+	const char* start = ptr;
+	while (( *ptr >= '0' && *ptr <= '9' ) ||
+			 *ptr == '.' ||
+			 *ptr == 'x' ||
+			 *ptr == 'b') {
+		ptr++;
 	}
 	
-	return lexer_append_literal_str(lexer, start, count, LITERAL_TYPE_NUM);
+	lex_append_tok_literal_substr(WAK_LEX_ARGS, start, ptr, LITERAL_TYPE_NUM);
+	return lex_dispatch(WAK_LEX_ARGS);
 }
 
 
-Token lexer_parse_string_literal(Lexer_Data* lexer) {
-	wak_assert(lexer_peek_char(lexer) == '"');
+const char* lex_parse_string_literal(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '"');
 
-	const char* start = lexer->read;
-	size_t count = 0;
-	char c;
+	const char* start = ptr;
 	do {
-		lexer_pop_char(lexer);
-		c = lexer_peek_char(lexer);
-		count++;
-	} while(c != '"' && c != 0 && c != '\n' && c != '\r');
+		ptr++;
+	} while(*ptr != '"' && *ptr != 0 && *ptr != '\n' && *ptr != '\r');
 
-	if (c == '"') {
-		count++;
-		lexer_pop_char(lexer);
-	}
+	if (*ptr == '"') ptr++;
 
-	return lexer_append_literal_str(lexer, start, count, LITERAL_TYPE_STRING);
+	lex_append_tok_literal_substr(WAK_LEX_ARGS, start, ptr, LITERAL_TYPE_STRING);
+	return lex_dispatch(WAK_LEX_ARGS);
 }
 
-Token lexer_parse_char_literal(Lexer_Data* lexer) {
-	wak_assert(lexer_peek_char(lexer) == '\'');
+const char* lex_parse_char_literal(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '\'');
 
-	const char* start = lexer->read;
-	size_t count = 0;
-	char c;
+	const char* start = ptr;
 	do {
-		lexer_pop_char(lexer);
-		c = lexer_peek_char(lexer);
-		count++;
-	} while(c != '\'' && c != 0 && c != '\n' && c != '\r');
+		ptr++;
+	} while(*ptr != '\'' && *ptr != 0 && *ptr != '\n' && *ptr != '\r');
 
-	if (c == '\'') {
-		count++;
-		lexer_pop_char(lexer);
-	}
+	if (*ptr == '\'') ptr++;
 
-	return lexer_append_literal_str(lexer, start, count, LITERAL_TYPE_CHAR);
+	lex_append_tok_literal_substr(WAK_LEX_ARGS, start, ptr, LITERAL_TYPE_CHAR);
+	return lex_dispatch(WAK_LEX_ARGS);
 }
 
-Token lexer_parse_slash(Lexer_Data* lexer) {
-	wak_assert(lexer_peek_char(lexer) == '/');
+const char* lex_parse_slash(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '/');
 
-	lexer_pop_char(lexer);
-	char c = lexer_peek_char(lexer);
-	if (c == '*') return lexer_parse_multi_comment(lexer);
-	if (c == '/') return lexer_parse_single_comment(lexer);
+	ptr++;
+	if ( *ptr == '*') return lex_parse_multi_comment(WAK_LEX_ARGS);
+	if ( *ptr == '/') return lex_parse_single_comment(WAK_LEX_ARGS);
 
-	return make_token_token(TOKEN_SLASH);
-}
-
-Token lexer_parse_single_comment(Lexer_Data* lexer) {
-	wak_assert(lexer_peek_char(lexer) == '/');
+	lex_append_tok_val(WAK_LEX_ARGS, TOKEN_SLASH);
 	
-	char c;
-	do {
-		lexer_pop_char(lexer);
-		c = lexer_peek_char(lexer);
-	} while (c != '\n' && c != '\r' && c != 0);
-
-	return make_token_token(TOKEN_EMPTY);
+	return lex_dispatch(WAK_LEX_ARGS);
 }
 
-Token lexer_parse_multi_comment(Lexer_Data* lexer) {
-	wak_assert(lexer_peek_char(lexer) == '*');
-	lexer_pop_char(lexer);
-
+const char* lex_parse_single_comment(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '/');
 	
-	Token out = make_token_token(TOKEN_EMPTY);
-	size_t depth = 1;
 	do {
-		char c = lexer_peek_char(lexer);
-		char next = lexer_peek_char_n(lexer, 1);
+		ptr++;
+	} while (*ptr != '\n' && *ptr != '\r' && *ptr != 0);
 
-		if (c == 0) return make_token_token(TOKEN_EOF);
-		else if (c == '\n') lexer_breakline(lexer);
+	return lex_dispatch(WAK_LEX_ARGS);
+}
+
+const char* lex_parse_eof(WAK_LEX_PARAMS) {
+	lex_append_tok_val(WAK_LEX_ARGS, TOKEN_EOF);
+	return ptr;
+}
+
+const char* lex_parse_multi_comment(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '*');
+	ptr++;
+
+	uint32_t depth = 1;
+	do {
+		char c = *ptr;
+		char next = *(ptr+1);
+
+		if (c == 0) return lex_dispatch(WAK_LEX_ARGS);
+		else if (c == '\n') lex_breakline(WAK_LEX_ARGS);
+		// skip * (if comment start) or / (if end) because otherwise /*/ will trigger twice
 		else if (c == '/' && next == '*') {
-			lexer_pop_char(lexer);
+			ptr++;
 			depth ++;
 		}
 		else if (c == '*' && next == '/') {
-			lexer_pop_char(lexer);
+			ptr++;
 			depth--;
 		}
 
-		lexer_pop_char(lexer);
+		ptr++;
 	} while (depth > 0);
 
 
-	return out;
+	return lex_dispatch(WAK_LEX_ARGS);
 }	
 
-Token lexer_parse_linebreak(Lexer_Data* lexer) {
-	char c = lexer_peek_char(lexer);
+const char* lex_parse_linebreak(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '\n' || *ptr == '\r');
 
-	wak_assert(c == '\n' || c == '\r');
-	
-	if (c == '\r') {
-		lexer_pop_char(lexer);
-		c = lexer_peek_char(lexer);
-	}
-	if (c == '\n') {
-		lexer_pop_char(lexer);
-	}
-	lexer_breakline(lexer);
-	return make_token_token(TOKEN_BREAK);
+	if (*ptr == '\r') ptr++;
+	if (*ptr == '\n') ptr++;
+
+	lex_breakline(WAK_LEX_ARGS);
+	lex_append_tok_val(WAK_LEX_ARGS, TOKEN_BREAK);
+
+	return lex_dispatch(WAK_LEX_ARGS);
+}
+
+void lex_breakline(WAK_LEX_PARAMS) {
+	state->line_start = ptr;
+	state->line_num++;
+}
+
+const char* lex_parse_dot(WAK_LEX_PARAMS) {
+	wak_assert(*ptr == '.');
+
+	char c = *(ptr+1);
+	if (c >= '0' && c <= '9') 
+		return lex_parse_num_literal(WAK_LEX_ARGS);
+
+	lex_append_tok_val(WAK_LEX_ARGS, TOKEN_DOT);
+
+	return lex_dispatch(WAK_LEX_ARGS);
+}
+
+WAK_FORCEINLINE static void lex_append_tok(WAK_LEX_PARAMS, Token tok) {
+	state->token_pos.end = ptr;
+	vector_pos_append(state->positions, state->token_pos);
+	vector_token_append(state->tokens, tok);
+}
+
+WAK_FORCEINLINE static void lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v) {
+	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_TOKEN, .token=v});
+}
+
+// copy substring from buffer
+WAK_FORCEINLINE static void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Literal_Type type) {
+	uint32_t len = (uint32_t)(end - start);
+	char* dst = malloc_str(len);
+	memcpy(dst, start, len);
+	lex_append_tok_literal_str(WAK_LEX_ARGS, dst, type);
+}
+
+// copy substring from buffer
+WAK_FORCEINLINE static void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, const char* start, const char* end) {
+	uint32_t len = (uint32_t)(end - start);
+	char* dst = malloc_str(len);
+	memcpy(dst, start, len);
+	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_IDENTIFIER, .identifier=dst});
 }
 
 
-
-Token lexer_parse_dot(Lexer_Data* lexer) {
-	wak_assert(lexer_peek_char(lexer) == '.');
-
-	char c = lexer_peek_char_n(lexer, 1);
-
-	if (c >= '0' && c <= '9') {
-		return lexer_parse_num_literal(lexer);
-	}
-
-	return make_token_token(TOKEN_DOT);
-}
-Token lexer_append_literal_bool(Lexer_Data* lexer, Token_Value val) {
-	wak_assert(val == TOKEN_KEYWORD_TRUE || val == TOKEN_KEYWORD_FALSE);
-	bool b = val == TOKEN_KEYWORD_TRUE;
-
-	Token_Literal literal = (Token_Literal){LITERAL_TYPE_BOOL, .v_bool=b};
-
-	vector_literal_append(lexer->literals, literal);
-	return (Token){TOKEN_TYPE_LITERAL, .literal=literal};
+WAK_FORCEINLINE static void lex_append_tok_literal_str(WAK_LEX_PARAMS, const char* str, Token_Literal_Type type) {
+	Token_Literal literal = (Token_Literal){type, .v_str=str};
+	vector_literal_append(state->literals, literal);
+	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_LITERAL, .literal=literal});
 }
 
-Token lexer_append_literal_str(Lexer_Data* lexer, const char* start, size_t count, Token_Literal_Type type) {
-	char* dst = malloc_str(count);
-	memcpy(dst, start, count);
-	
-
-	Token_Literal literal = (Token_Literal){type, .v_str=dst};
-
-	vector_literal_append(lexer->literals, literal);
-
-	return (Token){TOKEN_TYPE_LITERAL, .literal=literal};
-}
-
-
-char lexer_peek_char(Lexer_Data* lexer) {
-	if (lexer->read < lexer->end)
-		return *(lexer->read);
-	return 0;
-}
-
-void lexer_pop_char(Lexer_Data* lexer) {
-	lexer->read++;
-	lexer->char_num++;
-}
-
-char lexer_peek_char_n(Lexer_Data* lexer, size_t n) {
-	if (lexer->read+n < lexer->end)
-		return *(lexer->read+n);
-	return 0;
-}
-
-void lexer_pop_char_n(Lexer_Data* lexer, size_t n) {
-	lexer->read+=n;
-	lexer->char_num+=n;
-}
-
-void lexer_breakline(Lexer_Data* lexer) {
-	lexer->char_num = 1;
-	lexer->line_num++;
+WAK_FORCEINLINE static void lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token) {
+	Token_Literal literal = (Token_Literal){LITERAL_TYPE_BOOL, .v_bool=token};
+	vector_literal_append(state->literals, literal);
+	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_LITERAL, .literal=literal});
 }
 
 const_str_map_pair token_keywords[] = {
@@ -360,21 +364,18 @@ const_str_map_pair token_keywords[] = {
 
 #define TOKEN_KEYWORD_COUNT sizeof(token_keywords)/sizeof(token_keywords[0])
 
+WAK_FORCEINLINE
+wak_lex_state lex_state_init(const char* ptr, const char* limit) {
+	return (wak_lex_state) {
+		.limit=limit,
+		.tok_map=const_str_map_new(token_keywords, TOKEN_KEYWORD_COUNT),
+		.line_num=1,
+		.line_start=ptr,
+		.token_pos=(Token_Pos){},
 
-Lexer_Data lexer_init(const char* start, const char* end) {
-	const_str_map* map = const_str_map_new(token_keywords, TOKEN_KEYWORD_COUNT);
-	vector_str* identifiers = vector_str_new();
-	vector_literal* literals = vector_literal_new();
-
-	Lexer_Data lexer;
-	lexer.start = start;
-	lexer.read = start;
-	lexer.end = end;
-	lexer.map = map;
-	lexer.identifiers = identifiers;
-	lexer.literals = literals;
-	lexer.line_num = 1;
-	lexer.char_num = 1;
-
-	return lexer;
+		.identifiers=vector_str_new(),
+		.literals=vector_literal_new(),
+		.tokens=vector_token_new(),
+		.positions=vector_pos_new(),
+	};
 }

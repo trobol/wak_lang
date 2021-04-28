@@ -1,5 +1,6 @@
 {
-	"files.associations": {
-		"timers.h": "c"
-	}
+	"disasexpl.associations": {
+		"**/*.c": "${workspaceFolder}/build/${fileBasenameNoExtension}.s"
+	},
+	"C_Cpp.autoAddFileAssociations": false
 }
