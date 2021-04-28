@@ -8,6 +8,11 @@
 
 #include <string.h>
 
+typedef struct {
+
+} wak_parse_data;
+
+
 DEFINE_VECTOR(vector_statement, AST_Statement);
 DEFINE_VECTOR(vector_error, AST_Error);
 
@@ -63,8 +68,8 @@ void parser_emit_error_impl(Parser* parser, AST_Error_Code code, const char* msg
 #define parser_emit_error(parser, code, msg) parser_emit_error_impl(parser, code, msg, __FILE__, __LINE__)
 
 Parsed_Module parse(Token_Module module) {
-	printf("\n\n START: %u  \n", vector_count((vector*)module.tokens));
-	Parser parser = (Parser){ module, 0, vector_statement_new()};
+	printf("\n\n START: %zu \n", vector_count((vector*)module.tokens));
+	Parser parser = (Parser){ .tok_mod=module, .tok_index=0, .statements=vector_statement_new(), .errors=vector_error_new()};
 
 	AST_Statement statement;
 	do
@@ -369,8 +374,8 @@ AST_Statement parser_end_block(Parser* parser) {
 	size_t size = vector_count((vector*)parser->statements);
 	// search backwards for a block
 	for(size_t i = size; i > 0; i--) {
-		AST_Statement* itr = parser->statements->start + i;
-		if (!statement_is_block(*itr) || itr->) continue;
+		//AST_Statement* itr = parser->statements->start + i;
+		//if (!statement_is_block(*itr) || itr->) continue;
 
 
 		parser_pop_token(parser);
