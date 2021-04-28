@@ -3,8 +3,8 @@
 #include <stdio.h>
 
 #ifdef NDEBUG
-#define _wak_assert(v)
-#define _wak_assert_msg(v, msg)
+#define wak_assert(v)
+#define wak_assert_msg(v, msg)
 #else
 #include "_debug_break.h"
 static inline void _wak_assert_fail(const char* expr, const char* msg, const char* file, int line) {
