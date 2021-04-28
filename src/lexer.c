@@ -56,11 +56,11 @@ const char* lexer_next(WAK_LEX_PARAMS);
 wak_lex_state lex_state_init(const char* ptr, const char* limit);
 
 
-WAK_FORCEINLINE static void lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v);
-WAK_FORCEINLINE static void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Literal_Type type);
-WAK_FORCEINLINE static void lex_append_tok_literal_str(WAK_LEX_PARAMS, const char* str, Token_Literal_Type type);
-WAK_FORCEINLINE static void lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token);
-WAK_FORCEINLINE static void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, const char* start, const char* end);
+void lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v);
+void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Literal_Type type);
+void lex_append_tok_literal_str(WAK_LEX_PARAMS, const char* str, Token_Literal_Type type);
+void lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token);
+void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, const char* start, const char* end);
 
 const char* lex_parse_eof(WAK_LEX_PARAMS);
 const char* lex_parse_identifier(WAK_LEX_PARAMS);
@@ -313,12 +313,12 @@ WAK_FORCEINLINE static void lex_append_tok(WAK_LEX_PARAMS, Token tok) {
 	vector_token_append(state->tokens, tok);
 }
 
-WAK_FORCEINLINE static void lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v) {
+void lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v) {
 	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_TOKEN, .token=v});
 }
 
 // copy substring from buffer
-WAK_FORCEINLINE static void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Literal_Type type) {
+void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Literal_Type type) {
 	uint32_t len = (uint32_t)(end - start);
 	char* dst = malloc_str(len);
 	memcpy(dst, start, len);
@@ -326,7 +326,7 @@ WAK_FORCEINLINE static void lex_append_tok_literal_substr(WAK_LEX_PARAMS, const 
 }
 
 // copy substring from buffer
-WAK_FORCEINLINE static void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, const char* start, const char* end) {
+void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, const char* start, const char* end) {
 	uint32_t len = (uint32_t)(end - start);
 	char* dst = malloc_str(len);
 	memcpy(dst, start, len);
@@ -334,13 +334,13 @@ WAK_FORCEINLINE static void lex_append_tok_identifier_substr(WAK_LEX_PARAMS, con
 }
 
 
-WAK_FORCEINLINE static void lex_append_tok_literal_str(WAK_LEX_PARAMS, const char* str, Token_Literal_Type type) {
+void lex_append_tok_literal_str(WAK_LEX_PARAMS, const char* str, Token_Literal_Type type) {
 	Token_Literal literal = (Token_Literal){type, .v_str=str};
 	vector_literal_append(state->literals, literal);
 	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_LITERAL, .literal=literal});
 }
 
-WAK_FORCEINLINE static void lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token) {
+void lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token) {
 	Token_Literal literal = (Token_Literal){LITERAL_TYPE_BOOL, .v_bool=token};
 	vector_literal_append(state->literals, literal);
 	lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_LITERAL, .literal=literal});
