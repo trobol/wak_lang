@@ -33,7 +33,7 @@ void timer_report(Timer_ID id) {
 	else if (end_times[id] == 0)
 		printf("not ended\n");
 	else
-		printf("%f\n", (double) total / CLOCKS_PER_SEC);
+		printf("%fms\n", (double) total / (CLOCKS_PER_SEC / 1000));
 }
 
 void timer_report_all() {
