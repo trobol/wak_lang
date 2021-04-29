@@ -7,6 +7,17 @@
 #include <stdbool.h>
 #include <string.h>
 
+/*
+This is built relying on tail calls,
+without it this will likely be much slower and cause stack overflows
+Might only work on x86-64/ARM64 architectures
+
+TODO: figure out how this functions on other architectures / fix problems
+
+references:
+https://blog.reverberate.org/2021/04/21/musttail-efficient-interpreters.html
+https://github.com/protocolbuffers/upb/pull/310
+*/
 
 typedef struct wak_lex_state {
 	const char* limit;
