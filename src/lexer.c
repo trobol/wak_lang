@@ -44,7 +44,7 @@ wak_lex_state lex_state_init(const char* ptr, const char* limit);
 
 
 const char* lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v);
-const char* lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Type type);
+const char* lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, Token_Type type);
 const char* lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token);
 
 const char* lex_parse_eof(WAK_LEX_PARAMS);
@@ -163,7 +163,7 @@ const char* lex_parse_identifier(WAK_LEX_PARAMS) {
 	int tok = const_str_map_find_len(state->tok_map, start, len);
 
 	if (tok == -1) {
-		return lex_append_tok_substr(WAK_LEX_ARGS, start, ptr, TOKEN_TYPE_IDENTIFIER);
+		return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_IDENTIFIER);
 	} else {
 		if (tok == TOKEN_KEYWORD_TRUE || tok == TOKEN_KEYWORD_FALSE)
 			return lex_append_tok_literal_bool(WAK_LEX_ARGS, tok); //TODO: fix this, should pass bool val
@@ -182,7 +182,7 @@ const char* lex_parse_num_literal(WAK_LEX_PARAMS) {
 		ptr++;
 	}
 	
-	return lex_append_tok_substr(WAK_LEX_ARGS, start, ptr, TOKEN_TYPE_LITERAL_NUM);
+	return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_LITERAL_NUM);
 }
 
 
@@ -196,7 +196,7 @@ const char* lex_parse_string_literal(WAK_LEX_PARAMS) {
 
 	if (*ptr == '"') ptr++;
 
-	return lex_append_tok_substr(WAK_LEX_ARGS, start, ptr, TOKEN_TYPE_LITERAL_STR);
+	return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_LITERAL_STR);
 }
 
 const char* lex_parse_char_literal(WAK_LEX_PARAMS) {
@@ -209,7 +209,7 @@ const char* lex_parse_char_literal(WAK_LEX_PARAMS) {
 
 	if (*ptr == '\'') ptr++;
 
-	return lex_append_tok_substr(WAK_LEX_ARGS, start, ptr, TOKEN_TYPE_LITERAL_CHAR);
+	return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_LITERAL_CHAR);
 }
 
 const char* lex_parse_slash(WAK_LEX_PARAMS) {
@@ -325,9 +325,9 @@ const char* lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v) {
 	return lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_TOKEN, .token=v});
 }
 
-// copy substring from buffer
-const char* lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, const char* end, Token_Type type) {
-	uint32_t len = (uint32_t)(end - start);
+// copy substring from buffer, from start to ptr
+const char* lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, Token_Type type) {
+	uint32_t len = (uint32_t)(ptr - start);
 	char* dst = malloc_str(len);
 	memcpy(dst, start, len);
 	return lex_append_tok(WAK_LEX_ARGS, (Token){ .type=type, .identifier=dst});
