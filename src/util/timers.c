@@ -24,16 +24,18 @@ void timer_end(Timer_ID id) {
 	end_times[id] = clock();
 }
 
+#define CLOCKS_PER_MS (double)(CLOCKS_PER_SEC / 1000)
+
 void timer_report(Timer_ID id) {
 	printf("%15s: ", TIMER_NAMES[id]);
 	clock_t total = end_times[id] - start_times[id];
 
 	if (start_times[id] == 0)
-		printf("not started\n");
+		printf("%12s\n","not started");
 	else if (end_times[id] == 0)
-		printf("not ended\n");
+		printf("%12s\n","not ended");
 	else
-		printf("%fms\n", (double) total / (CLOCKS_PER_SEC / 1000));
+		printf("%10.5fms (%ld ticks)\n", (double) total / CLOCKS_PER_MS, total);
 }
 
 void timer_report_all() {
