@@ -201,7 +201,10 @@ AST_Value parser_expr(Parser* parser) {
 	Token tok = parser_peek_token(parser);
 	switch (tok.type)
 	{
-	case TOKEN_TYPE_LITERAL:
+	case TOKEN_TYPE_LITERAL_STR:
+	case TOKEN_TYPE_LITERAL_CHAR:
+	case TOKEN_TYPE_LITERAL_NUM:
+	case TOKEN_TYPE_LITERAL_BOOL:
 		return parser_expr_literal(parser);
 	case TOKEN_TYPE_IDENTIFIER:
 		return parser_expr_iden(parser);
@@ -212,9 +215,9 @@ AST_Value parser_expr(Parser* parser) {
 
 AST_Value parser_expr_literal_decimal(Parser* parser) {
 	Token tok = parser_peek_token(parser);
-	wak_assert(tok.type == TOKEN_TYPE_LITERAL && tok.literal.type == LITERAL_TYPE_NUM);
+	wak_assert( tok.type == TOKEN_TYPE_LITERAL_NUM );
 
-	const char* str = tok.literal.v_str;
+	const char* str = tok.literal_str;
 	size_t str_len = strlen(str);
 
 	parser_pop_token(parser);
@@ -273,9 +276,9 @@ AST_Value parser_expr_literal_binary(Parser* parser) {
 
 AST_Value parser_expr_literal_num(Parser* parser) {
 	Token tok = parser_peek_token(parser);
-	wak_assert(tok.type == TOKEN_TYPE_LITERAL && tok.literal.type == LITERAL_TYPE_NUM);
+	wak_assert(tok.type == TOKEN_TYPE_LITERAL_NUM);
 
-	const char* str = tok.literal.v_str;
+	const char* str = tok.literal_str;
 	size_t str_len = strlen(str);
 
 	if (str[0] == '0' && str_len > 1) {
@@ -289,11 +292,11 @@ AST_Value parser_expr_literal_num(Parser* parser) {
 
 AST_Value parser_expr_literal(Parser* parser) {
 	Token tok = parser_peek_token(parser);
-	wak_assert_msg( tok.type == TOKEN_TYPE_LITERAL, "expected a token of type literal");
+	wak_assert_msg( tok.type >= TOKEN_TYPE_LITERAL_STR, "expected a token of type literal");
 	
-	switch (tok.literal.type)
+	switch (tok.type)
 	{
-	case LITERAL_TYPE_NUM:
+	case TOKEN_TYPE_LITERAL_NUM:
 		return parser_expr_literal_num(parser);
 	default:
 		break;

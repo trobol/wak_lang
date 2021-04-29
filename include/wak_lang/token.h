@@ -64,28 +64,14 @@ typedef enum Token_Value {
 
 } Token_Value;
 
-typedef enum Token_Literal_Type
-{
-	LITERAL_TYPE_NUM,
-	LITERAL_TYPE_STRING,
-	LITERAL_TYPE_CHAR,
-	LITERAL_TYPE_BOOL
-} Token_Literal_Type;
-
-typedef struct Token_Literal
-{
-	Token_Literal_Type type;
-	union {
-		const char* v_str;
-		bool v_bool;
-	};
-} Token_Literal;
-
 typedef enum Token_Type
 {
-	TOKEN_TYPE_IDENTIFIER = 0,
-	TOKEN_TYPE_LITERAL = 1,
-	TOKEN_TYPE_TOKEN = 2
+	TOKEN_TYPE_IDENTIFIER,
+	TOKEN_TYPE_TOKEN,
+	TOKEN_TYPE_LITERAL_STR,
+	TOKEN_TYPE_LITERAL_CHAR,
+	TOKEN_TYPE_LITERAL_BOOL,
+	TOKEN_TYPE_LITERAL_NUM
 } Token_Type;
 
 typedef struct Token
@@ -94,7 +80,8 @@ typedef struct Token
 	union {
 		Token_Value token;
 		const char* identifier;
-		Token_Literal literal;
+		const char* literal_str;
+		bool literal_bool;
 	};
 } Token;
 

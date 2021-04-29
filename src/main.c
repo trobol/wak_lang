@@ -14,8 +14,8 @@ void print_token(Token tok, Token_Pos pos) {
 		printf("%s ", token_value_to_name(tok.token));
 	} else if (tok.type == TOKEN_TYPE_IDENTIFIER) {
 		printf("%s ", tok.identifier);
-	} else if (tok.type == TOKEN_TYPE_LITERAL) {
-		printf("%s ", tok.literal.v_str);
+	} else if (tok.type >= TOKEN_TYPE_LITERAL_STR) {
+		printf("%s ", tok.literal_str);
 	}
 }
 

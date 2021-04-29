@@ -14,7 +14,7 @@ endif()
 file(GLOB_RECURSE SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.c")
 
 if ( CMAKE_COMPILER_IS_GNUCC )
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Werror=implicit -Wall -Wextra -Wno-unused-parameter --save-temps -foptimize-sibling-calls")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -Werror=implicit -Wall -Wextra -Wno-unused-parameter --save-temps -foptimize-sibling-calls ")
 endif()
 if ( MSVC )
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W4")

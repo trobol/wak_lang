@@ -37,7 +37,7 @@ bool vector_full(vector* v) {
 
 void vector_append(vector* v, const void* val) {
 	if (vector_full(v))
-		vector_expand(v, 10);
+		vector_expand(v, vector_count(v)+1);
 	memcpy(v->end, val, v->type_size);
 	v->end = (char*)v->end + v->type_size;
 }
