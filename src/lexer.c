@@ -292,26 +292,18 @@ const char* lex_parse_dot(WAK_LEX_PARAMS) {
 	return lex_append_tok_val(WAK_LEX_ARGS, TOKEN_DOT);
 }
 
-void lex_array_grow(WAK_LEX_PARAMS) {
-	Token* new_tok = alloc_array(state->tok_capacity * 2, Token);
-	uint64_t tok_size = state->tok_capacity * sizeof(Token);
-	memcpy(new_tok, state->tok_array, tok_size);
-	free(state->tok_array);
-	state->tok_array = new_tok;
+const char* lex_append_tok(WAK_LEX_PARAMS, Token tok) {
 
-	Token_Pos* new_pos = alloc_array(state->tok_capacity * 2, Token_Pos);
-	uint64_t pos_size = state->tok_capacity * sizeof(Token_Pos);
-	memcpy(new_pos, state->pos_array, pos_size);
-	free(state->pos_array);
-	state->pos_array = new_pos;
+	// grow arrays
+	if (WAK_UNLIKELY(state->tok_count >= state->tok_capacity)) {
+		uint64_t tok_size = state->tok_capacity * sizeof(Token) * 2;
+		state->tok_array = realloc(state->tok_array, tok_size);
 
-	state->tok_capacity *= 2;
-}
+		uint64_t pos_size = state->tok_capacity * sizeof(Token_Pos) * 2;
+		state->pos_array = realloc(state->pos_array, pos_size);
 
-WAK_FORCEINLINE const char* lex_append_tok(WAK_LEX_PARAMS, Token tok) {
-
-	if (WAK_UNLIKELY(state->tok_count >= state->tok_capacity))
-		lex_array_grow(WAK_LEX_ARGS);
+		state->tok_capacity *= 2;
+	}
 	state->token_pos.end = ptr;
 	state->pos_array[state->tok_count] = state->token_pos;
 	state->tok_array[state->tok_count] = tok;
