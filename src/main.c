@@ -11,11 +11,11 @@
 void print_token(FILE* fp, Token tok, Token_Pos pos) {
 	fprintf(fp, "%i:%i ", pos.line_number, pos.character_number);
 	if (tok.type == TOKEN_TYPE_TOKEN) {
-		fprintf(fp, "%s ", token_value_to_name(tok.token));
+		fprintf(fp, "%s \n", token_value_to_name(tok.token));
 	} else if (tok.type == TOKEN_TYPE_IDENTIFIER) {
-		fprintf(fp, "%s ", tok.identifier);
+		fprintf(fp, "%s \n", tok.identifier);
 	} else if (tok.type >= TOKEN_TYPE_LITERAL_STR) {
-		fprintf(fp, "%s ", tok.literal_str);
+		fprintf(fp, "%s \n", tok.literal_str);
 	}
 }
 
