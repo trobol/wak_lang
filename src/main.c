@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
 	timer_start(TIMER_FILE_READ);
 	file_descriptor src_fd = fd_open(argv[1], 0);
-	if (!src_fd) {
+	if (src_fd == -1) {
 		printf("could not open file\n");
 		return 1;
 	}
