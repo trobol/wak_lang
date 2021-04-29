@@ -69,39 +69,35 @@ void const_str_map_free(const_str_map* map) {
 
 // based on GCC STD lib
 // compare two strings, where p2 is not null terminated
-int strcmp_len (const char *p1, const char *p2, uint32_t len)
+int strcmp_len (const char *p1, const char *p2, const char *p2_end)
 {
 	const unsigned char *s1 = (const unsigned char *) p1;
 	const unsigned char *s2 = (const unsigned char *) p2;
-	const unsigned char *s2_end = s2 + len;
+	const unsigned char *s2_end = (const unsigned char *) p2_end;
 	unsigned char c1, c2;
 	do
 	{
-		c1 = (unsigned char) *s1++;
-		c2 = (unsigned char) *s2++;
-		if (c1 == '\0' || s2 >= s2_end)
+		c1 = (unsigned char) *s1;
+		c2 = (unsigned char) *s2;
+		if (c1 == '\0')
 			return c1 - c2;
+		s1++;
+		s2++;
 	}
-	while (c1 == c2);
+	while (c1 == c2 && s2 < s2_end);
 	return c1 - c2;
 }
 
 // find item with string of length (string can be not null terminated)
-uint64_t const_str_map_find_len(const_str_map* map, const char* key, uint32_t len) {
-	int l = 0;
-	int r = map->entry_count - 1;
-	while (l <= r)
-	{
-		int m = l + (r - l) / 2;
-
-		int cmp = strcmp_len(map->keys[m], key, len);
-		if (cmp < 0)
-			l = m + 1;
-		else if (cmp == 0)
-			return map->values[m];
-		else
-			r = m - 1;
-	}
+uint64_t const_str_map_find_len(const_str_map* map, const char* key, const char* key_end) {
+	uint32_t i = 0;
+	
+	do {
+		int cmp = strcmp_len(map->keys[i], key, key_end);
+		if (cmp == 0) return map->values[i];
+		i++;
+	} while(i < map->entry_count);
+	
 	return -1;
 }
 
