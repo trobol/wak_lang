@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
 	timer_start(TIMER_PARSE);
 	printf("\n\nPARSER OUTPUT:\n");
-	Parsed_Module parsed_mod = parse(module);
+	//Parsed_Module parsed_mod = parse(module);
 	
 
 

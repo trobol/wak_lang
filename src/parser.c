@@ -83,7 +83,7 @@ Parsed_Module parse(Token_Module module) {
 			printf("encountered fatal error");
 			return (Parsed_Module) {};
 		}
-		printf("%s\n", get_statement_name(statement));
+		//printf("%s\n", get_statement_name(statement));
 		if (parser.statement_error) {
 			return (Parsed_Module) {};
 		} else if (statement.type != AST_STATEMENT_TYPE_EMPTY) {

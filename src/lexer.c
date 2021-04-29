@@ -19,6 +19,16 @@ https://blog.reverberate.org/2021/04/21/musttail-efficient-interpreters.html
 https://github.com/protocolbuffers/upb/pull/310
 */
 
+
+
+#define STR_PAGE_SIZE 4000 // 4kb
+
+typedef struct str_page str_page;
+struct str_page {
+	str_page *next, *prev;
+	const char data[STR_PAGE_SIZE];
+};
+
 typedef struct wak_lex_state {
 	const char* limit;
 
@@ -27,6 +37,7 @@ typedef struct wak_lex_state {
 	Token_Pos token_pos;
 
 	const_str_map* tok_map;
+	str_page* first_page;
 
 	Token* tok_array;
 	Token_Pos* pos_array;
@@ -94,13 +105,15 @@ Token_Module lexetize(const char* ptr, const char* limit) {
 	ptr = lex_dispatch(WAK_LEX_ARGS);
 
 
-	vector_token* tok_vec = vector_token_new_count(state->tok_count);
-	uint64_t tok_size = state->tok_count * sizeof(Token);
-	memcpy(tok_vec->start, state->tok_array, tok_size);
+	vector_token* tok_vec =  vector_token_new_count(state->tok_count);
+	tok_vec->start = state->tok_array;
+	tok_vec->end = state->tok_array + state->tok_count;
+	tok_vec->capacity = state->tok_array + state->tok_capacity;
 
 	vector_pos* pos_vec = vector_pos_new_count(state->tok_count);
-	uint64_t pos_size = state->tok_count * sizeof(Token_Pos);
-	memcpy(pos_vec->start, state->pos_array, pos_size);
+	pos_vec->start = state->pos_array;
+	pos_vec->end = state->pos_array + state->tok_count;
+	pos_vec->capacity = state->pos_array + state->tok_capacity;
 
 	return token_module_init(ptr, limit, tok_vec, pos_vec);
 }
@@ -170,8 +183,7 @@ const char* lex_parse_identifier(WAK_LEX_PARAMS) {
 		ptr++;
 	} while(is_identifier_character(*ptr));
 
-	uint32_t len = (uint32_t)(ptr - start);
-	int tok = const_str_map_find_len(state->tok_map, start, len);
+	int tok = const_str_map_find_len(state->tok_map, start, ptr);
 
 	if (tok == -1) {
 		return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_IDENTIFIER);

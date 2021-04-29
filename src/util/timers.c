@@ -13,33 +13,45 @@ const char* TIMER_NAMES[TIMER_ID_COUNT] = {
 	"FILE_WRITE"
 };
 
-clock_t start_times[TIMER_ID_COUNT];
-clock_t end_times[TIMER_ID_COUNT];
+long start_times[TIMER_ID_COUNT];
+long end_times[TIMER_ID_COUNT];
+
+typedef struct timespec timespec;
+
+long get_time_ns() {
+	timespec time;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time);
+	return time.tv_nsec;
+}
 
 void timer_start(Timer_ID id) {
-	start_times[id] = clock();
+	
+	start_times[id] = get_time_ns();
 }
 
 void timer_end(Timer_ID id) {
-	end_times[id] = clock();
+	end_times[id] = get_time_ns();
 }
 
-#define CLOCKS_PER_MS (double)(CLOCKS_PER_SEC / 1000)
+#define NS_TO_MS 1000000
 
 void timer_report(Timer_ID id) {
 	printf("%15s: ", TIMER_NAMES[id]);
-	clock_t total = end_times[id] - start_times[id];
+	long total = end_times[id] - start_times[id];
 
 	if (start_times[id] == 0)
 		printf("%12s\n","not started");
 	else if (end_times[id] == 0)
 		printf("%12s\n","not ended");
 	else
-		printf("%10.5fms (%ld ticks)\n", (double) total / CLOCKS_PER_MS, total);
+		printf("%10.5fms\n", (double) total / NS_TO_MS);
 }
 
 void timer_report_all() {
-	printf("\n\nTimer report:\n");
+	timespec res;
+	clock_getres(CLOCK_PROCESS_CPUTIME_ID, &res);
+
+	printf("\n\nTimer report: (resolution %ldns)\n", res.tv_nsec);
 	for(int i = 0; i < TIMER_ID_COUNT; i++)
 		timer_report((Timer_ID)i);
 }

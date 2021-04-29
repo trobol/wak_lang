@@ -17,12 +17,6 @@ set(GCC_FLAGS "-march=native -Werror=implicit -Wall -Wextra -Wno-unused-paramete
 set(CLANG_FLAGS "")
 set(MSVC_FLAGS "/W4")
 
-option(GPROF_ENABLE "link with gprof" OFF)
-if (GPROF_ENABLE)
-	set(GCC_FLAGS "${GCC_FLAGS} -pg")
-	message(STATUS "gprof enabled")
-endif(GPROF_ENABLE)
-
 if ( CMAKE_COMPILER_IS_GNUCC )
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_FLAGS}")
 endif()
