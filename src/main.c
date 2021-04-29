@@ -8,16 +8,20 @@
 
 
 
-void print_token(Token tok, Token_Pos pos) {
-	printf("%i:%i ", pos.line_number, pos.character_number);
+void print_token(FILE* fp, Token tok, Token_Pos pos) {
+	fprintf(fp, "%i:%i ", pos.line_number, pos.character_number);
 	if (tok.type == TOKEN_TYPE_TOKEN) {
-		printf("%s ", token_value_to_name(tok.token));
+		fprintf(fp, "%s \n", token_value_to_name(tok.token));
 	} else if (tok.type == TOKEN_TYPE_IDENTIFIER) {
-		printf("%s ", tok.identifier);
-	} else if (tok.type == TOKEN_TYPE_LITERAL) {
-		printf("%s ", tok.literal.v_str);
+		fprintf(fp, "%s \n", tok.identifier);
+	} else if (tok.type >= TOKEN_TYPE_LITERAL) {
+		if ( tok.literal.type == LITERAL_TYPE_BOOL)
+			fprintf(fp, "%d \n", tok.literal.v_bool);
+		else
+			fprintf(fp, "%s \n", tok.literal.v_str);
 	}
 }
+
 
 int main(int argc, char *argv[]) {
 	//_wak_assert_msg(0, "test");
@@ -44,13 +48,16 @@ int main(int argc, char *argv[]) {
 	
 	timer_end(TIMER_LEXETIZE);
 
-	printf("\n\n TOKENIZED OUTPUT: %zu\n",  vector_count((vector*)module.tokens));
+	FILE* token_fp = fopen("tokens.txt", "w");
+
+	fprintf(token_fp, "\n\n TOKENIZED OUTPUT: %zu\n",  vector_count((vector*)module.tokens));
 	for (size_t i = 0; i < vector_count((vector*)module.tokens); i++) {
 		Token tok = module.tokens->start[i];
 		Token_Pos pos = module.positions->start[i];
-		print_token(tok, pos);	
+		print_token(token_fp, tok, pos);	
 	}
 
+	fclose(token_fp);
 
 	
 
