@@ -3,8 +3,13 @@
 
 const char *token_value_to_name(Token_Value t)
 {
+	static char buffer[2] = {0, 0};
 	switch (t)
 	{
+		case 1 ... 9:
+		case 11 ... 255:
+			buffer[0] = t;
+			return buffer;
 		case TOKEN_INDENT:
 			return "TOKEN_INDENT";
 		case TOKEN_EMPTY:
@@ -39,18 +44,19 @@ const char *token_value_to_name(Token_Value t)
 			return "TOKEN_KEYWORD_NULL";
 		case TOKEN_KEYWORD_NULLPTR:
 			return "TOKEN_KEYWORD_NULLPTR";
-		case TOKEN_BREAK:
-			return "TOKEN_BREAK";
+			
+		
 		case TOKEN_ERROR:
 			return "TOKEN_ERROR";
 		case TOKEN_EOF:
 			return "TOKEN_EOF";
-
+		case TOKEN_BREAK:
+			return "TOKEN_BREAK";
+/*
 		case TOKEN_AT:
 			return "@";
 		case TOKEN_OPEN_BRACKET:
 			return "{";
-
 		case TOKEN_CLOSE_BRACKET:
 			return "}";
 		case TOKEN_OPEN_BRACE:
@@ -87,6 +93,17 @@ const char *token_value_to_name(Token_Value t)
 			return ";";
 		case TOKEN_QUOTE:
 			return "\"";
+*/
+
+		case TOKEN_KEYWORD_F32:
+			return "f32";
+		case TOKEN_KEYWORD_I32:
+			return "i32";
+		case TOKEN_KEYWORD_BOOL:
+			return "bool";
+		case TOKEN_KEYWORD_VOID:
+			return "void";
+		
 
 		default:
 			return "UNKNOWN_TOKEN";

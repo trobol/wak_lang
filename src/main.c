@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
 	timer_start(TIMER_LEXETIZE);
 
-	Token_Module module = lexetize(src_mmf.data, src_mmf.data+src_mmf.length);
+	Token_Module module = lexetize(src_mmf.data, src_mmf.data+src_mmf.length+1);
 	
 	timer_end(TIMER_LEXETIZE);
 

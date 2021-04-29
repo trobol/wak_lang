@@ -136,7 +136,7 @@ const char* lexer_next(WAK_LEX_PARAMS) {
 			return lex_parse_linebreak(WAK_LEX_ARGS);
 		default:
 			ptr++;
-			return lex_dispatch(WAK_LEX_ARGS);
+			return lex_append_tok_val(WAK_LEX_ARGS, *(ptr-1));
 	}
 }
 
