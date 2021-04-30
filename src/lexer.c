@@ -41,53 +41,52 @@ typedef struct wak_lex_state {
 
 	Token* tok_array;
 	Token_Pos* pos_array;
-	uint32_t tok_count;
-	uint32_t tok_capacity;
 
 } wak_lex_state;
 
 /*
 only the hottest variables,
 ideally should always remain in registers
+on x86 these should be RBX, RBP, RDI, RSI, RSP, R12, R13, R14
 */
 #define WAK_LEX_PARAMS \
-	wak_lex_state* state, const char* ptr
+	wak_lex_state* state, const char* ptr, uint32_t tok_count, uint32_t tok_capacity
 
 #define WAK_LEX_ARGS \
-	state, ptr
+	state, ptr, tok_count, tok_capacity
 
 
 WAK_FORCEINLINE void lex_breakline(WAK_LEX_PARAMS);
 
-const char* lexer_next(WAK_LEX_PARAMS);
+uint32_t lexer_next(WAK_LEX_PARAMS);
 
 
 wak_lex_state lex_state_init(const char* ptr, const char* limit);
 
 
-const char* lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v);
-const char* lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, Token_Type type);
-const char* lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token);
+uint32_t lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v);
+uint32_t lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, Token_Type type);
+uint32_t lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token);
 
-const char* lex_parse_eof(WAK_LEX_PARAMS);
-const char* lex_parse_identifier(WAK_LEX_PARAMS);
-const char* lex_parse_num_literal(WAK_LEX_PARAMS);
-const char* lex_parse_string_literal(WAK_LEX_PARAMS);
-const char* lex_parse_char_literal(WAK_LEX_PARAMS);
-const char* lex_parse_slash(WAK_LEX_PARAMS);
-const char* lex_parse_linebreak(WAK_LEX_PARAMS);
-const char* lex_parse_dot(WAK_LEX_PARAMS);
-const char* lex_parse_single_comment(WAK_LEX_PARAMS);
-const char* lex_parse_multi_comment(WAK_LEX_PARAMS);
+uint32_t lex_parse_eof(WAK_LEX_PARAMS);
+uint32_t lex_parse_identifier(WAK_LEX_PARAMS);
+uint32_t lex_parse_num_literal(WAK_LEX_PARAMS);
+uint32_t lex_parse_string_literal(WAK_LEX_PARAMS);
+uint32_t lex_parse_char_literal(WAK_LEX_PARAMS);
+uint32_t lex_parse_slash(WAK_LEX_PARAMS);
+uint32_t lex_parse_linebreak(WAK_LEX_PARAMS);
+uint32_t lex_parse_dot(WAK_LEX_PARAMS);
+uint32_t lex_parse_single_comment(WAK_LEX_PARAMS);
+uint32_t lex_parse_multi_comment(WAK_LEX_PARAMS);
 
-const char* lex_make_error(WAK_LEX_PARAMS);
+uint32_t lex_make_error(WAK_LEX_PARAMS);
 
 WAK_NOINLINE
-const char* lex_dispatch(WAK_LEX_PARAMS) {
+uint32_t lex_dispatch(WAK_LEX_PARAMS) {
 	
 
 	if (WAK_UNLIKELY(ptr >= state->limit)) {
-		return ptr;
+		return tok_count;
 	}
 
 	return lexer_next(WAK_LEX_ARGS);
@@ -99,21 +98,18 @@ const char* lex_dispatch(WAK_LEX_PARAMS) {
 
 
 Token_Module lexetize(const char* ptr, const char* limit) {
-	wak_lex_state state_val = lex_state_init(ptr, limit);
-	wak_lex_state* state = &state_val;
+	wak_lex_state state = lex_state_init(ptr, limit);
 
-	ptr = lex_dispatch(WAK_LEX_ARGS);
+	uint32_t tok_count = lex_dispatch(&state, ptr, 0, 10);
 
 
-	vector_token* tok_vec =  vector_token_new_count(state->tok_count);
-	tok_vec->start = state->tok_array;
-	tok_vec->end = state->tok_array + state->tok_count;
-	tok_vec->capacity = state->tok_array + state->tok_capacity;
+	vector_token* tok_vec =  vector_token_new_count(tok_count);
+	tok_vec->start = state.tok_array;
+	tok_vec->end = tok_vec->capacity = state.tok_array + tok_count;
 
-	vector_pos* pos_vec = vector_pos_new_count(state->tok_count);
-	pos_vec->start = state->pos_array;
-	pos_vec->end = state->pos_array + state->tok_count;
-	pos_vec->capacity = state->pos_array + state->tok_capacity;
+	vector_pos* pos_vec = vector_pos_new_count(tok_count);
+	pos_vec->start = state.pos_array;
+	pos_vec->end = pos_vec->capacity = state.pos_array + tok_count;
 
 	return token_module_init(ptr, limit, tok_vec, pos_vec);
 }
@@ -128,7 +124,7 @@ void lex_store_tokpos(WAK_LEX_PARAMS) {
 
 
 
-const char* lexer_next(WAK_LEX_PARAMS) {
+uint32_t lexer_next(WAK_LEX_PARAMS) {
 
 	// skip spaces and tabs
 	// this should not overflow because there should be an EOF at end
@@ -175,7 +171,7 @@ bool is_identifier_character(char c)
 			 c == '_';
 }
 
-const char* lex_parse_identifier(WAK_LEX_PARAMS) {
+uint32_t lex_parse_identifier(WAK_LEX_PARAMS) {
 	wak_assert(is_identifier_character(*ptr));
 
 	const char* start = ptr;
@@ -196,7 +192,7 @@ const char* lex_parse_identifier(WAK_LEX_PARAMS) {
 }
 
 
-const char* lex_parse_num_literal(WAK_LEX_PARAMS) {
+uint32_t lex_parse_num_literal(WAK_LEX_PARAMS) {
 	const char* start = ptr;
 	while (( *ptr >= '0' && *ptr <= '9' ) ||
 			 *ptr == '.' ||
@@ -209,7 +205,7 @@ const char* lex_parse_num_literal(WAK_LEX_PARAMS) {
 }
 
 
-const char* lex_parse_string_literal(WAK_LEX_PARAMS) {
+uint32_t lex_parse_string_literal(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '"');
 
 	const char* start = ptr;
@@ -222,7 +218,7 @@ const char* lex_parse_string_literal(WAK_LEX_PARAMS) {
 	return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_LITERAL_STR);
 }
 
-const char* lex_parse_char_literal(WAK_LEX_PARAMS) {
+uint32_t lex_parse_char_literal(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '\'');
 
 	const char* start = ptr;
@@ -235,7 +231,7 @@ const char* lex_parse_char_literal(WAK_LEX_PARAMS) {
 	return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_LITERAL_CHAR);
 }
 
-const char* lex_parse_slash(WAK_LEX_PARAMS) {
+uint32_t lex_parse_slash(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '/');
 
 	ptr++;
@@ -245,7 +241,7 @@ const char* lex_parse_slash(WAK_LEX_PARAMS) {
 	return lex_append_tok_val(WAK_LEX_ARGS, TOKEN_SLASH);
 }
 
-const char* lex_parse_single_comment(WAK_LEX_PARAMS) {
+uint32_t lex_parse_single_comment(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '/');
 	
 	do {
@@ -255,14 +251,14 @@ const char* lex_parse_single_comment(WAK_LEX_PARAMS) {
 	return lex_append_tok_val(WAK_LEX_ARGS, TOKEN_BREAK);
 }
 
-const char* lex_parse_eof(WAK_LEX_PARAMS) {
+uint32_t lex_parse_eof(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '\0');
 	ptr++;
 	return lex_append_tok_val(WAK_LEX_ARGS, TOKEN_EOF);
 }
 
 
-const char* lex_parse_multi_comment(WAK_LEX_PARAMS) {
+uint32_t lex_parse_multi_comment(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '*');
 	ptr++;
 
@@ -290,7 +286,7 @@ const char* lex_parse_multi_comment(WAK_LEX_PARAMS) {
 	return lex_dispatch(WAK_LEX_ARGS);
 }	
 
-const char* lex_parse_linebreak(WAK_LEX_PARAMS) {
+uint32_t lex_parse_linebreak(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '\n' || *ptr == '\r');
 
 	if (*ptr == '\r') ptr++;
@@ -305,7 +301,7 @@ void lex_breakline(WAK_LEX_PARAMS) {
 	state->line_num++;
 }
 
-const char* lex_parse_dot(WAK_LEX_PARAMS) {
+uint32_t lex_parse_dot(WAK_LEX_PARAMS) {
 	wak_assert(*ptr == '.');
 
 	char c = *(ptr+1);
@@ -315,40 +311,52 @@ const char* lex_parse_dot(WAK_LEX_PARAMS) {
 	return lex_append_tok_val(WAK_LEX_ARGS, TOKEN_DOT);
 }
 
-const char* lex_append_tok(WAK_LEX_PARAMS, Token tok) {
 
-	// grow arrays
-	if (WAK_UNLIKELY(state->tok_count >= state->tok_capacity)) {
-		uint64_t tok_size = state->tok_capacity * sizeof(Token) * 2;
-		state->tok_array = realloc(state->tok_array, tok_size);
-
-		uint64_t pos_size = state->tok_capacity * sizeof(Token_Pos) * 2;
-		state->pos_array = realloc(state->pos_array, pos_size);
-
-		state->tok_capacity *= 2;
-	}
+uint32_t lex_assign_tok(WAK_LEX_PARAMS, Token tok) {
 	state->token_pos.end = ptr;
-	state->pos_array[state->tok_count] = state->token_pos;
-	state->tok_array[state->tok_count] = tok;
+	state->pos_array[tok_count] = state->token_pos;
+	state->tok_array[tok_count] = tok;
 
-	state->tok_count++;
+	tok_count++;
 
 	return lex_dispatch(WAK_LEX_ARGS);
 }
 
-const char* lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v) {
+uint32_t lex_expand_assign_tok(WAK_LEX_PARAMS, Token tok) {
+	uint64_t tok_size = tok_capacity * sizeof(Token) * 2;
+	state->tok_array = realloc(state->tok_array, tok_size);
+
+	uint64_t pos_size = tok_capacity * sizeof(Token_Pos) * 2;
+	state->pos_array = realloc(state->pos_array, pos_size);
+
+	tok_capacity *= 2;
+
+	return lex_assign_tok(WAK_LEX_ARGS, tok);
+}
+
+
+uint32_t lex_append_tok(WAK_LEX_PARAMS, Token tok) {
+
+	if (WAK_UNLIKELY(tok_count >= tok_capacity)) {
+		return lex_expand_assign_tok(WAK_LEX_ARGS, tok);
+	}
+
+	return lex_assign_tok(WAK_LEX_ARGS, tok);
+}
+
+uint32_t lex_append_tok_val(WAK_LEX_PARAMS, Token_Value v) {
 	return lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_TOKEN, .token=v});
 }
 
 // copy substring from buffer, from start to ptr
-const char* lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, Token_Type type) {
+uint32_t lex_append_tok_substr(WAK_LEX_PARAMS, const char* start, Token_Type type) {
 	uint32_t len = (uint32_t)(ptr - start);
 	char* dst = malloc_str(len);
 	memcpy(dst, start, len);
 	return lex_append_tok(WAK_LEX_ARGS, (Token){ .type=type, .identifier=dst});
 }
 
-const char* lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token) {
+uint32_t lex_append_tok_literal_bool(WAK_LEX_PARAMS, bool token) {
 	return lex_append_tok(WAK_LEX_ARGS, (Token){ .type=TOKEN_TYPE_LITERAL_BOOL, .literal_bool=token});
 }
 
@@ -379,8 +387,6 @@ wak_lex_state lex_state_init(const char* ptr, const char* limit) {
 		.line_start=ptr,
 		.token_pos=(Token_Pos){},
 		.tok_array=alloc_array(10, Token),
-		.pos_array=alloc_array(10, Token_Pos),
-		.tok_count=0,
-		.tok_capacity=10
+		.pos_array=alloc_array(10, Token_Pos)
 	};
 }
