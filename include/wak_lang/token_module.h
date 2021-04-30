@@ -2,6 +2,7 @@
 #define _WAK_LANG_TOKEN_MODULE_H
 #include <wak_lang/util/vector.h>
 #include <wak_lang/token.h>
+#include <stdlib.h>
 
 DEFINE_VECTOR(vector_token, Token);
 DEFINE_VECTOR(vector_pos, Token_Pos);
@@ -25,5 +26,24 @@ static inline Token_Module token_module_init(const char* start, const char* end,
 	};
 }
 
+static inline void token_module_free(Token_Module* module) {
+	Token *start = module->tokens->start;
+	Token *end   = module->tokens->end;
+
+	for (Token* itr = start; itr < end; itr++) {
+		Token_Type t = itr->type;
+		if (t == TOKEN_TYPE_IDENTIFIER ||
+			t == TOKEN_TYPE_LITERAL_CHAR ||
+			t == TOKEN_TYPE_LITERAL_NUM ||
+			t == TOKEN_TYPE_LITERAL_STR
+		) {
+			free((void*)itr->identifier);
+		}
+	}
+
+
+	vector_free((vector*)module->positions);
+	vector_free((vector*)module->tokens);
+}
 
 #endif

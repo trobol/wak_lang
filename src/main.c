@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	fclose(token_fp);
-
+	token_module_free(&module);
 	
 
 	timer_start(TIMER_PARSE);
