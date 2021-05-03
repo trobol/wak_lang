@@ -15,3 +15,4 @@ it it very cool? yes
 
 going to try to change the lexetizer to follow this,
 start: lexetizer takes ~0.000045 and uses ~2421 instructions
+end: lexer takes ~11ms

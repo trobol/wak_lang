@@ -6,9 +6,15 @@
 #include <wak_lang/parser.h>
 #include <float.h>
 
-#define ITERATIONS 100
 
 int main(int argc, char *argv[]) {
+
+	if (argc != 2) {
+		printf("error: missing iteration count\n");
+		return 1;
+	}
+
+	int iterations = atoi(argv[1]);
 
 	double min = DBL_MAX;
 	double max = 0;
@@ -20,12 +26,12 @@ int main(int argc, char *argv[]) {
 
 	file_descriptor src_fd = fd_open(filepath, 0);
 	if (src_fd == -1) {
-		printf("could not open file\n");
+		printf("error: could not open file\n");
 		return 1;
 	}
 	mmapped_file src_mmf = fd_mem_map(src_fd);
 
-	for (uint32_t i = 0; i < ITERATIONS; i++) {
+	for (int i = 0; i < iterations; i++) {
 		timespec start, end;
 
 		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
@@ -41,12 +47,12 @@ int main(int argc, char *argv[]) {
 
 		if (i == 0) first_time = time;
 
-		printf("%d, %fms\n", i, time);
+		printf("%d: %fms\n", i, time);
 	}
 
-	double average = total / (long double)ITERATIONS;
-
-	printf("iterations: %dms\n", ITERATIONS);
+	double average = total / (long double)iterations;
+	printf("\nRESULTS:\n");
+	printf("iterations: %d\n", iterations);
 	printf("total: %Lfms\n", total);
 	printf("min: %fms\n", min);
 	printf("max: %fms\n", max);
