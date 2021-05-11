@@ -11,8 +11,9 @@ if(EXISTS "${LOC_PATH}")
 endif()
 
 
-file(GLOB_RECURSE SOURCE_FILES RELATIVE "${PROJECT_SOURCE_DIR}" src/*.c)
-list(REMOVE_ITEM SOURCE_FILES src/main.c)
+file(GLOB_RECURSE TEST_SOURCE_FILES CONFIGURE_DEPENDS RELATIVE "${PROJECT_SOURCE_DIR}" tests/*.c)
+file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS RELATIVE "${PROJECT_SOURCE_DIR}" src/*.c)
+list(REMOVE_ITEM SOURCE_FILES src/wak_lang/main.c)
 
 set(GCC_FLAGS "-march=native -Werror=implicit -Wall -Wextra -Wno-unused-parameter --save-temps -foptimize-sibling-calls")
 set(CLANG_FLAGS "")
@@ -25,10 +26,17 @@ if ( MSVC )
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MSVC_FLAGS}")
 endif()
 
-add_executable(wak_lang ${SOURCE_FILES} src/main.c)
+add_executable(wak_lang ${SOURCE_FILES} src/wak_lang/main.c)
 target_include_directories(wak_lang PUBLIC "${PROJECT_SOURCE_DIR}/include")
 
-add_executable(lex_speed ${SOURCE_FILES} tests/lex_speed.c)
-target_include_directories(lex_speed PUBLIC "${PROJECT_SOURCE_DIR}/include")
+foreach(TEST_PATH ${TEST_SOURCE_FILES})
+
+    get_filename_component(TEST_NAME ${TEST_PATH} NAME_WE)
+
+    add_executable(${TEST_NAME} ${SOURCE_FILES} ${TEST_PATH})
+    target_include_directories(${TEST_NAME} PUBLIC "${PROJECT_SOURCE_DIR}/include")
+
+    
+endforeach(TEST_PATH)
 
 source_group(TREE "${PROJECT_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${HEADER_LIST})

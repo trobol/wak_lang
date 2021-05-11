@@ -1,7 +1,7 @@
-#ifndef _WAK_LANG_UTIL_CONST_STR_MAP_H
-#define _WAK_LANG_UTIL_CONST_STR_MAP_H
-#include <wak_lang/util/assert.h>
-#include <wak_lang/util/mem.h>
+#ifndef _WAK_LIB_CONST_STR_MAP_H
+#define _WAK_LIB_CONST_STR_MAP_H
+#include <wak_lib/assert.h>
+#include <wak_lib/mem.h>
 
 #include <stdlib.h>
 #include <stddef.h>

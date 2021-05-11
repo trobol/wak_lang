@@ -1,5 +1,5 @@
-#ifndef _WAK_LANG_VECTOR_H
-#define _WAK_LANG_VECTOR_H
+#ifndef _WAK_LIB_VECTOR_H
+#define _WAK_LIB_VECTOR_H
 #include <stdint.h>
 #include <stddef.h>
 

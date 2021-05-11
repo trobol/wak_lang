@@ -1,4 +1,4 @@
-#include <wak_lang/util/mem.h>
+#include <wak_lib/mem.h>
 #include <stdlib.h>
 
 #include <errno.h>

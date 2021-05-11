@@ -1,6 +1,6 @@
 #ifndef _WAK_LANG_TOKEN_MODULE_H
 #define _WAK_LANG_TOKEN_MODULE_H
-#include <wak_lang/util/vector.h>
+#include <wak_lib/vector.h>
 #include <wak_lang/token.h>
 #include <stdlib.h>
 

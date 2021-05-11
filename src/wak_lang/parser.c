@@ -1,7 +1,7 @@
 #include <wak_lang/parser.h>
 #include <wak_lang/token_module.h>
-#include <wak_lang/util/vector.h>
-#include <wak_lang/util/assert.h>
+#include <wak_lib/vector.h>
+#include <wak_lib/assert.h>
 #include <wak_lang/ast/expression.h>
 #include <wak_lang/ast/statement_debug.h>
 

@@ -1,6 +1,6 @@
-#include <wak_lang/util/vector.h>
-#include <wak_lang/util/mem.h>
-#include <wak_lang/util/assert.h>
+#include <wak_lib/vector.h>
+#include <wak_lib/mem.h>
+#include <wak_lib/assert.h>
 
 #include <stdlib.h>
 #include <stdbool.h>

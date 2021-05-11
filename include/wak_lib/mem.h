@@ -1,5 +1,5 @@
-#ifndef _WAK_LANG_MEM_H
-#define _WAK_LANG_MEM_H
+#ifndef _WAK_LIB_MEM_H
+#define _WAK_LIB_MEM_H
 #include <stddef.h>
 #include <stdint.h>
 

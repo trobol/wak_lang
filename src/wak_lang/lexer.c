@@ -1,8 +1,8 @@
 #include <wak_lang/lexer.h>
-#include <wak_lang/util/assert.h>
-#include <wak_lang/util/mem.h>
-#include <wak_lang/util/const_str_map.h>
-#include <wak_lang/util/def.h>
+#include <wak_lib/assert.h>
+#include <wak_lib/mem.h>
+#include <wak_lib/const_str_map.h>
+#include <wak_lib/def.h>
 
 #include <stdbool.h>
 #include <string.h>

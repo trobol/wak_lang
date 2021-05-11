@@ -1,6 +1,6 @@
-#include <wak_lang/util/assert.h>
-#include <wak_lang/util/timers.h>
-#include <wak_lang/util/file.h>
+#include <wak_lib/assert.h>
+#include <wak_lib/timers.h>
+#include <wak_lib/file.h>
 
 #include <wak_lang/lexer.h>
 #include <wak_lang/parser.h>

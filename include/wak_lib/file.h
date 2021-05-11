@@ -1,5 +1,5 @@
-#ifndef _WAK_LANG_FILE_H
-#define _WAK_LANG_FILE_H
+#ifndef _WAK_LIB_FILE_H
+#define _WAK_LIB_FILE_H
 #include <stddef.h>
 
 // FILE DESTRIPTORS

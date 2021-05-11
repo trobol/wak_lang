@@ -1,6 +1,0 @@
-#ifndef _WAK_LANG_UTIL_ALGORITHMS_H
-#define _WAK_LANG_UTIL_ALGORITHMS_H
-
-
-
-#endif

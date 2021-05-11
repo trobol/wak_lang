@@ -1,5 +1,5 @@
-#ifndef _WAK_LANG_ASSERT_ASSERT_H
-#define _WAK_LANG_ASSERT_ASSERT_H
+#ifndef _WAK_LIB_ASSERT_ASSERT_H
+#define _WAK_LIB_ASSERT_ASSERT_H
 #include <stdio.h>
 
 #ifdef NDEBUG

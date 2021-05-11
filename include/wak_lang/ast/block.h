@@ -1,6 +1,6 @@
 #ifndef _WAK_LANG_AST_BLOCK_H
 #define _WAK_LANG_AST_BLOCK_H
-#include <wak_lang/util/vector.h>
+#include <wak_lib/vector.h>
 #include <wak_lang/token.h>
 
 #include "statement.h"

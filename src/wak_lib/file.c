@@ -1,4 +1,4 @@
-#include <wak_lang/util/file.h>
+#include <wak_lib/file.h>
 
 #ifdef __unix__
 #include <fcntl.h>

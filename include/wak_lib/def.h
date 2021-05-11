@@ -1,5 +1,5 @@
-#ifndef _WAK_UTIL_DEF_H
-#define _WAK_UTIL_DEF_H
+#ifndef _WAK_LIB_DEF_H
+#define _WAK_LIB_DEF_H
 
 
 #if defined(__GNUC__) || defined(__clang__)

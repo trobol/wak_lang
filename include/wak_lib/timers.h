@@ -1,5 +1,5 @@
-#ifndef _WAK_LANG_TIMERS_H
-#define _WAK_LANG_TIMERS_H
+#ifndef _WAK_LIB_TIMERS_H
+#define _WAK_LIB_TIMERS_H
 #include <time.h>
 
 typedef enum {

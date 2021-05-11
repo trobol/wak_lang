@@ -1,5 +1,5 @@
-#include <wak_lang/util/timers.h>
-#include <wak_lang/util/assert.h>
+#include <wak_lib/timers.h>
+#include <wak_lib/assert.h>
 
 #include <time.h>
 
