@@ -3,6 +3,7 @@
 #include <wak_lib/mem.h>
 #include <wak_lib/const_str_map.h>
 #include <wak_lib/def.h>
+#include <wak_lib/array.h>
 
 #include <stdbool.h>
 #include <string.h>
@@ -163,7 +164,7 @@ uint32_t lexer_next(WAK_LEX_PARAMS) {
 
 
 
-bool is_identifier_character(char c)
+WAK_FORCEINLINE bool is_identifier_character(char c)
 {
 	return  (c >= 'a' && c <= 'z') ||
 			(c >= 'A' && c <= 'Z') ||
@@ -181,25 +182,32 @@ uint32_t lex_parse_identifier(WAK_LEX_PARAMS) {
 
 	int tok = const_str_map_find_len(state->tok_map, start, ptr);
 
-	if (tok == -1) {
+	if (tok == -1) 
 		return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_IDENTIFIER);
-	} else {
-		if (tok == TOKEN_KEYWORD_TRUE || tok == TOKEN_KEYWORD_FALSE)
+	
+
+	if (tok == TOKEN_KEYWORD_TRUE || tok == TOKEN_KEYWORD_FALSE)
 			return lex_append_tok_literal_bool(WAK_LEX_ARGS, tok); //TODO: fix this, should pass bool val
-		else
-			return lex_append_tok_val(WAK_LEX_ARGS, tok);
-	}
+	
+	return lex_append_tok_val(WAK_LEX_ARGS, tok);
+	
+}
+
+WAK_FORCEINLINE bool is_num_char(char c) {
+	return ( c >= '0' && c <= '9' ) ||
+			 c == '.' ||
+			 c == 'x' ||
+			 c == 'b';
 }
 
 
 uint32_t lex_parse_num_literal(WAK_LEX_PARAMS) {
+	wak_assert(is_num_char(*ptr));
+
 	const char* start = ptr;
-	while (( *ptr >= '0' && *ptr <= '9' ) ||
-			 *ptr == '.' ||
-			 *ptr == 'x' ||
-			 *ptr == 'b') {
+	do {
 		ptr++;
-	}
+	} while (is_num_char(*ptr));
 	
 	return lex_append_tok_substr(WAK_LEX_ARGS, start, TOKEN_TYPE_LITERAL_NUM);
 }
@@ -386,7 +394,7 @@ wak_lex_state lex_state_init(const char* ptr, const char* limit) {
 		.line_num=1,
 		.line_start=ptr,
 		.token_pos=(Token_Pos){},
-		.tok_array=alloc_array(10, Token),
-		.pos_array=alloc_array(10, Token_Pos)
+		.tok_array=array_alloc(10, Token),
+		.pos_array=array_alloc(10, Token_Pos)
 	};
 }

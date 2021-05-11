@@ -8,14 +8,6 @@
 */
 
 
-
-#define alloc_array(COUNT, TYPE) (TYPE*)alloc_array_impl(COUNT, sizeof(TYPE))
-/*
- * allocates count * elem_size bytes
- * after checking that it does not overflow size_t
-*/
-void* alloc_array_impl(size_t count, size_t elem_size);
-
 /*
  * force crash if count * elem_size will overflow
 */
