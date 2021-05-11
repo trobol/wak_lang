@@ -2,6 +2,7 @@
 #define _WAK_LIB_CONST_STR_MAP_H
 #include <wak_lib/assert.h>
 #include <wak_lib/mem.h>
+#include <wak_lib/array.h>
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -49,8 +50,8 @@ const_str_map* const_str_map_new(const_str_map_pair pairs[], size_t entry_count)
 	
 	const_str_map* map = (const_str_map*)malloc(sizeof(const_str_map));
 	
-	map->values = alloc_array(entry_count, uint64_t);
-	map->keys = alloc_array(entry_count, const char*);
+	map->values = array_alloc(entry_count, uint64_t);
+	map->keys = array_alloc(entry_count, const char*);
 	map->entry_count = entry_count;
 	
 	for(size_t i = 0; i < entry_count; i++) {
