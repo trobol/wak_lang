@@ -10,11 +10,11 @@ typedef enum {
 	AST_VALUE_TYPE_CONST_F32,
 	AST_VALUE_TYPE_CONST_STR,
 	AST_VALUE_TYPE_CONST_CHAR
-} AST_Value_Type;
+} IR_Value_Type;
 
-typedef struct AST_Value
+typedef struct IR_Value
 {
-	AST_Value_Type type;
+	IR_Value_Type type;
 	union
 	{
 		size_t u_index;
@@ -24,7 +24,7 @@ typedef struct AST_Value
 		char u_char;
 	};
 	
-} AST_Value;
+} IR_Value;
 
 
 

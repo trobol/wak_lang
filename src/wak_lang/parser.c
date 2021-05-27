@@ -1,226 +1,219 @@
 #include <wak_lang/parser.h>
 #include <wak_lang/token_module.h>
+
 #include <wak_lib/vector.h>
 #include <wak_lib/assert.h>
+#include <wak_lib/array.h>
+
 #include <wak_lang/ast/expression.h>
 #include <wak_lang/ast/statement_debug.h>
+
+#include <wak_lang/ir/statement.h>
 
 
 #include <string.h>
 
 typedef struct {
+	Token* limit;
+	Token* start;
 
-} wak_parse_data;
+	vector_statement* statements;
+	size_t statement_count;
+	size_t statement_capacity;
+} wak_parse_state;
 
 
-DEFINE_VECTOR(vector_statement, AST_Statement);
-DEFINE_VECTOR(vector_error, AST_Error);
+//DEFINE_VECTOR(vector_statement, _Statement);
+//DEFINE_VECTOR(vector_error, AST_Error);
 
 typedef struct {
 	Token_Module tok_mod;
 	size_t tok_index;
-	vector_statement* statements;
+	//vector_statement* statements;
 
-	vector_error* errors;
+	//vector_error* errors;
 	bool fatal_error;
 	bool statement_error;
 } Parser;
 
-Token parser_peek_token(Parser* parser);
-Token parser_peek_token_n(Parser* parser, size_t i);
-Token parser_peek_token_skip_break(Parser* parser);
+#define PARSER_PARAMS wak_parse_state* state, Token* tok 
+#define PARSER_ERR_PARAMS PARSER_PARAMS, unsigned int line
 
-void parser_pop_token(Parser* parser);
-void parser_pop_token_n(Parser* parser, size_t i);
+#define PARSER_ARGS state, tok
+#define PARSER_ERR_ARGS PARSER_ARGS, __LINE__
 
-AST_Statement parser_next_statement(Parser* parser);
-AST_Statement parser_func_decl(Parser* parser);
-AST_Statement parser_var_decl(Parser* parser);
-AST_Statement parser_return(Parser* parser);
-AST_Statement parser_void_call(Parser* parser);
-AST_Statement parser_eof(Parser* parser);
-AST_Statement parser_assign(Parser* parser);
-AST_Statement parser_end_block(Parser* parser);
+#define PARSER_RET Token*
 
-AST_Statement parser_struct(Parser* parser);
-AST_Statement parser_type_decl(Parser* parser);
+typedef PARSER_RET (*parser_error_handler)(PARSER_PARAMS, unsigned int line);
 
-AST_Data_Type parser_data_type(Parser* parser);
-
-AST_Statement parser_token(Parser* parser);
-AST_Statement parser_identifier(Parser* parser);
+PARSER_RET parser_append(PARSER_PARAMS, IR_Statement statement);
 
 
-void parser_append(Parser* parser, AST_Statement statement) {
-	vector_statement_append(parser->statements, statement);
-}
 
-AST_Value parser_expr(Parser* parser);
-AST_Value parser_expr_literal(Parser* parser);
-AST_Value parser_expr_iden(Parser* parser);
-AST_Value parser_expr_call(Parser* parser);
-AST_Value parser_expr_var(Parser* parser);
+PARSER_RET parser_dispatch(PARSER_PARAMS);
 
-void parser_print_error(Parser* parser, AST_Error error);
 
-void parser_emit_error_impl(Parser* parser, AST_Error_Code code, const char* msg, const char* file, unsigned int line);
+PARSER_RET parser_next(PARSER_PARAMS);
+PARSER_RET parser_func_decl(PARSER_PARAMS);
+PARSER_RET parser_var_decl(PARSER_PARAMS);
+PARSER_RET parser_return(PARSER_PARAMS);
+PARSER_RET parser_void_call(PARSER_PARAMS);
+PARSER_RET parser_eof(PARSER_PARAMS);
+PARSER_RET parser_assign(PARSER_PARAMS);
+PARSER_RET parser_end_block(PARSER_PARAMS);
 
-#define parser_emit_error(parser, code, msg) parser_emit_error_impl(parser, code, msg, __FILE__, __LINE__)
+PARSER_RET parser_struct(PARSER_PARAMS);
+PARSER_RET parser_type_decl(PARSER_PARAMS);
+PARSER_RET parser_token(PARSER_PARAMS);
+PARSER_RET parser_identifier(PARSER_PARAMS);
+
+//void parser_print_error(Parser* parser, AST_Error error);
+
+
+PARSER_RET parser_error_impl(PARSER_PARAMS, parser_error_handler handler, unsigned int line);
+PARSER_RET parser_missing(PARSER_ERR_PARAMS, const char* msg);
+PARSER_RET parser_err_fatal(PARSER_PARAMS);
+
+#define DEFINE_ERROR_FUNC(name) PARSER_RET error_handle_##name(PARSER_PARAMS, unsigned int line) 
 
 Parsed_Module parse(Token_Module module) {
-	printf("\n\n START: %zu \n", vector_count((vector*)module.tokens));
-	Parser parser = (Parser){ .tok_mod=module, .tok_index=0, .statements=vector_statement_new(), .errors=vector_error_new()};
 
-	AST_Statement statement;
-	do
-	{
-		size_t tok_index = parser.tok_index;
-		statement = parser_next_statement(&parser);
+	wak_parse_state state = (wak_parse_state){ 
+		.limit=module.tokens->end, 
+		.start=module.tokens->start,
+		.statement_count=0,
+		.statement_capacity=10,
+		.statements=array_alloc(10, IR_Statement)
+		};
 
-		
-		
-		if (parser.fatal_error) {
-			printf("encountered fatal error");
-			return (Parsed_Module) {};
-		}
-		//printf("%s\n", get_statement_name(statement));
-		if (parser.statement_error) {
-			return (Parsed_Module) {};
-		} else if (statement.type != AST_STATEMENT_TYPE_EMPTY) {
-			parser_append(&parser, statement);
-		}
-		// TODO: add positions
-
-		wak_assert_msg(parser.tok_index != tok_index, "parser did not progress");
-		
-
-	} while(statement.type != AST_STATEMENT_TYPE_EOF);
 
 	return (Parsed_Module) {};
 }
 
-AST_Statement parser_next_statement(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	AST_Statement statement;
-	switch (tok.type)
+PARSER_RET parser_dispatch(PARSER_PARAMS) {
+
+	if (tok >= state->limit) {
+		return tok;
+	}
+
+	return parser_next(PARSER_ARGS);
+}
+
+PARSER_RET err_handle_unexpected_literal(PARSER_ERR_PARAMS) {
+
+
+}
+
+
+PARSER_RET parser_next(PARSER_PARAMS) {
+	switch (tok->type)
 	{
 	case TOKEN_TYPE_TOKEN:
-		statement = parser_token(parser);
-		break;
+		return parser_token(PARSER_ARGS);
 	case TOKEN_TYPE_IDENTIFIER:
-		statement = parser_identifier(parser);
-		break;
+		return parser_identifier(PARSER_ARGS);
 	default:
-		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "cannot have literal by itself");
-		return (AST_Statement){};
+		return err_handle_unexpected_literal(PARSER_ERR_ARGS);
 	}
-	
-	
-	if (statement.type == AST_STATEMENT_TYPE_EMPTY || statement_is_block(statement))
-		return statement;
-
-	Token line_end = parser_peek_token(parser);
-	if (line_end.type == TOKEN_TYPE_TOKEN && line_end.token == TOKEN_SEMICOLON)
-		parser_pop_token(parser);
-	else
-		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "expected a semi colon");
-
-	return statement;
 }
 
-AST_Statement parser_token(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert(tok.type == TOKEN_TYPE_TOKEN);
+PARSER_RET err_handle_unknown_token(PARSER_ERR_PARAMS) {
+
+}
+
+PARSER_RET parser_token(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_TOKEN);
 	
-	switch (tok.token)
+	switch (tok->token)
 	{
 		case TOKEN_KEYWORD_FUNC:
-			return parser_func_decl(parser);
+			return parser_func_decl(PARSER_ARGS);
 		case TOKEN_KEYWORD_TYPE:
-			return parser_type_decl(parser);
+			return parser_type_decl(PARSER_ARGS);
 		case '}':
-			return parser_end_block(parser);
+			return parser_end_block(PARSER_ARGS);
 		case TOKEN_KEYWORD_RETURN:
-			return parser_return(parser);
+			return parser_return(PARSER_ARGS);
 		case TOKEN_EOF:
-			return parser_eof(parser);
+			return parser_eof(PARSER_ARGS);
 		case TOKEN_BREAK:
-			parser_pop_token(parser);
-			return (AST_Statement){AST_STATEMENT_TYPE_EMPTY};
+			return parser_dispatch(PARSER_ARGS);
 		default:
-			parser_emit_error(parser, AST_ERROR_UNSUPPORTED, "unknown token");
-			return (AST_Statement){};
+			return err_handle_unknown_token(PARSER_ERR_ARGS);
 	}
 }
-AST_Statement parser_identifier(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert_msg(tok.type == TOKEN_TYPE_IDENTIFIER, "expected token of type identifier");
-	Token next_tok = parser_peek_token_n(parser, 1);
-	if (next_tok.type != TOKEN_TYPE_TOKEN) { 
-		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "invalid operation on token");
-		return (AST_Statement){};
+
+PARSER_RET err_handle_invalid_op(PARSER_ERR_PARAMS) {
+
+	return tok;
+}
+
+
+PARSER_RET parser_identifier(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_IDENTIFIER);
+
+	Token* next_tok = tok+1;
+	if (next_tok->type != TOKEN_TYPE_TOKEN) { 
+		return err_handle_invalid_op(PARSER_ERR_ARGS);
 	}
 	
-	switch (next_tok.token)
+	switch (next_tok->token)
 	{
 		case '(':
-			return parser_void_call(parser);
+			return parser_void_call(PARSER_ARGS);
 		case ':':
-			return parser_var_decl(parser);
+			return parser_var_decl(PARSER_ARGS);
 		case '=':
-			return parser_assign(parser);
+			return parser_assign(PARSER_ARGS);
 		case '.':
 			// TODO handle dot operator
-			parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "dot operator");
-			return (AST_Statement){};
+			return parser_missing(PARSER_ERR_ARGS, "dot operator");
 		case '{':
 			// TODO object construction
-			parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "obj constr");
-			return (AST_Statement){};
+			return parser_missing(PARSER_ERR_ARGS, "obj constructor");
 		case '[':
 			// TODO array access
-			parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "array operator");
-			return (AST_Statement){};
+			return parser_missing(PARSER_ERR_ARGS, "array operator");
 		case '*':
 		case '/':
 		case '+':
 		case '-':
 			// TODO math operation
 			// assignment (+=...)
-			parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "math operation");
-			return (AST_Statement){};
+			return parser_missing(PARSER_ERR_ARGS, "math operator");
 		default:
 			// TODO syntax error
-			parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "unknown operation");
-			return (AST_Statement){};
+			return parser_missing(PARSER_ERR_ARGS, "unknown operation");
 	}
 
 }
 
-AST_Value parser_expr(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	switch (tok.type)
+PARSER_RET parser_expr(PARSER_PARAMS) {
+	switch (tok->type)
 	{
 	case TOKEN_TYPE_LITERAL_STR:
 	case TOKEN_TYPE_LITERAL_CHAR:
 	case TOKEN_TYPE_LITERAL_NUM:
 	case TOKEN_TYPE_LITERAL_BOOL:
-		return parser_expr_literal(parser);
+		return parser_expr_literal(PARSER_ARGS);
 	case TOKEN_TYPE_IDENTIFIER:
-		return parser_expr_iden(parser);
+		return parser_expr_iden(PARSER_ARGS);
 	default:
-		return (AST_Value){0}; // TODO: error
+		return parser_missing(PARSER_ERR_ARGS, "expression token"); // TODO: error
 	}
 }
 
-AST_Value parser_expr_literal_decimal(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert( tok.type == TOKEN_TYPE_LITERAL_NUM );
+PARSER_RET err_handle_literal_decimal(PARSER_ERR_PARAMS, const char* msg) {
 
-	const char* str = tok.literal_str;
+}
+
+PARSER_RET parser_expr_literal_decimal(PARSER_PARAMS) {
+	wak_assert( tok->type == TOKEN_TYPE_LITERAL_NUM );
+
+	const char* str = tok->literal_str;
 	size_t str_len = strlen(str);
 
-	parser_pop_token(parser);
+
 	unsigned int int_dig = 0;
 	unsigned int frac_dig = 0;
 	unsigned long int_val = 0;
@@ -243,124 +236,134 @@ AST_Value parser_expr_literal_decimal(Parser* parser) {
 			break;
 		case '.':
 			if (frac_dig == 0) frac_dig = 1;
-			else {
-				parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "multiple decimal points");
-				return (AST_Value){0};
-			}
+			else return err_handle_num(PARSER_ERR_ARGS, "multiple decimal points");
 			break;
 		default:
-			parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "invalid character");
-			return (AST_Value){0};
+			return err_handle_num(PARSER_ERR_ARGS, "invalid character");
 		}
 	}
 
+	tok++;
+
 	if ( frac_dig == 0) {
-		return (AST_Value){.type=AST_VALUE_TYPE_CONST_I32, .u_i32=int_val};
+		IR_Statement statement = (IR_Statement){
+			.type=IR_STATEMENT_TYPE_LITERAL,
+			.s_literal=(IR_Statement_Literal) {
+				.data_type=IR_DATA_TYPE_I32,
+				.i32=int_val
+			}
+		};
+		return parser_append(PARSER_ARGS, statement);
 	} else {
 		double f = int_val;
 		f += (float)frac_val / (float)frac_dig;
-		return (AST_Value){.type=AST_VALUE_TYPE_CONST_F32, .u_f32=f};
+		IR_Statement statement = (IR_Statement){
+			.type=IR_STATEMENT_TYPE_LITERAL,
+			.s_literal=(IR_Statement_Literal) {
+				.data_type=IR_DATA_TYPE_F32,
+				.f32=f
+			}
+		};
+		return parser_append(PARSER_ARGS, statement);
 	}
+
+	
 }
 
-AST_Value parser_expr_literal_hex(Parser* parser) {
-	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "hex literal");
-	return (AST_Value){0}; 
+PARSER_RET parser_expr_literal_hex(PARSER_PARAMS) {
+	return parser_missing(PARSER_ERR_ARGS, "hex literal");
 }
 
-AST_Value parser_expr_literal_binary(Parser* parser) {
-	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "binary literal");
-	return (AST_Value){0}; 
+PARSER_RET parser_expr_literal_binary(PARSER_PARAMS) {
+	return parser_missing(PARSER_ERR_ARGS, "binary literal");
 }
 
 
-AST_Value parser_expr_literal_num(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert(tok.type == TOKEN_TYPE_LITERAL_NUM);
+PARSER_RET parser_expr_literal_num(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_LITERAL_NUM);
 
-	const char* str = tok.literal_str;
+	const char* str = tok->literal_str;
 	size_t str_len = strlen(str);
 
 	if (str[0] == '0' && str_len > 1) {
-		if (str[1] == 'x') return parser_expr_literal_hex(parser);
-		if (str[1] == 'b') return parser_expr_literal_binary(parser);
+		if (str[1] == 'x') return parser_expr_literal_hex(PARSER_ARGS);
+		if (str[1] == 'b') return parser_expr_literal_binary(PARSER_ARGS);
 	}
 	
 
-	return parser_expr_literal_decimal(parser);
+	return parser_expr_literal_decimal(PARSER_ARGS);
 }
 
-AST_Value parser_expr_literal(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert_msg( tok.type >= TOKEN_TYPE_LITERAL_STR, "expected a token of type literal");
+PARSER_RET parser_expr_literal(PARSER_PARAMS) {
 	
-	switch (tok.type)
+	switch (tok->type)
 	{
 	case TOKEN_TYPE_LITERAL_NUM:
-		return parser_expr_literal_num(parser);
+		return parser_expr_literal_num(PARSER_ARGS);
+	case TOKEN_TYPE_LITERAL_STR:
+	case TOKEN_TYPE_LITERAL_BOOL:
+	case TOKEN_TYPE_LITERAL_CHAR:
+		return parser_missing(PARSER_ERR_ARGS, "literal type");
 	default:
+		// token was not a literal
+		wak_assert(false); 
 		break;
 	}
 
-
-	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "literal type");
-	return (AST_Value){0}; // TODO: error
+	return parser_err_fatal(PARSER_ARGS);
 }
 
 
 
-AST_Value parser_expr_iden(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert( tok.type == TOKEN_TYPE_IDENTIFIER);
+PARSER_RET parser_expr_iden(PARSER_PARAMS) {
+	wak_assert( tok->type == TOKEN_TYPE_IDENTIFIER);
 
-	Token next_tok = parser_peek_token_n(parser, 1);
-	if (next_tok.type == TOKEN_TYPE_TOKEN && next_tok.token == TOKEN_OPEN_PAREN)
-		return parser_expr_call(parser);
+	Token* next_tok = tok + 1;
+	if (next_tok->type == TOKEN_TYPE_TOKEN && next_tok->token == TOKEN_OPEN_PAREN)
+		return parser_expr_call(PARSER_ARGS);
 	
-	if (next_tok.type == TOKEN_TYPE_TOKEN && next_tok.token == TOKEN_SEMICOLON)
-		return parser_expr_var(parser);
+	if (next_tok->type == TOKEN_TYPE_TOKEN && next_tok->token == TOKEN_SEMICOLON)
+		return parser_expr_var(PARSER_ARGS);
 
-	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "identifier expression");
-	return (AST_Value){0}; // TODO: error
+	return parser_missing(PARSER_ERR_ARGS, "identifier expression");
 }
+
+
 
 // TODO: fix how this searches
 //		 this also wont handle constants
-AST_Value parser_expr_var(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert_msg( tok.type == TOKEN_TYPE_IDENTIFIER, "expected a token of type identifier");
+PARSER_RET parser_expr_var(PARSER_PARAMS) {
+	wak_assert( tok->type == TOKEN_TYPE_IDENTIFIER);
 
-	const char* name = tok.identifier;
-	size_t size = vector_count((vector*)parser->statements);
+	const char* name = tok->identifier;
+	size_t size = vector_count((vector*)state->statements);
 	// search backwards till we find a match
 	for(size_t i = size; i > 0; i--) {
-		AST_Statement* itr = parser->statements->start + i;
-		if (itr->type != AST_STATEMENT_TYPE_DECLARE) continue;
+		IR_Statement* itr = state->statements->start + i;
+		if (itr->type != IR_STATEMENT_TYPE_DECLARE) continue;
 
 		int cmp = strcmp(name, itr->s_declare.name);
 
 		if (cmp != 0) continue;
 
-		parser_pop_token(parser);
+		tok++;
 		return (AST_Value){.type=AST_VALUE_TYPE_INSTR_REF, .u_index=i};
 	}
 
 	printf("could not find variable: %s", name);
-	return (AST_Value){0}; // TODO: error
+	return 
 }
 
-AST_Value parser_expr_call(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert_msg( tok.type == TOKEN_TYPE_IDENTIFIER, "expected a token of type identifier");
+PARSER_RET parser_expr_call(PARSER_PARAMS) {
+	wak_assert( tok->type == TOKEN_TYPE_IDENTIFIER);
 	
-	return (AST_Value){0}; // TODO: error
+	return parser_missing("expression call");
 }
 
-AST_Statement parser_return(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert(tok.type == TOKEN_TYPE_TOKEN && tok.token == TOKEN_KEYWORD_RETURN);
+PARSER_RET parser_return(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_KEYWORD_RETURN);
 
-	parser_pop_token(parser);
+	tok++;
 	AST_Value value = parser_expr(parser);
 
 	if (value.type == AST_VALUE_TYPE_NULL)
@@ -370,18 +373,18 @@ AST_Statement parser_return(Parser* parser) {
 	return (AST_Statement){AST_STATEMENT_TYPE_RETURN, .s_return=ret};
 }
 
-AST_Statement parser_end_block(Parser* parser) {
+PARSER_RET parser_end_block(PARSER_PARAMS) {
 	
 	// IMPROVE: maybe keep a "stack" of blocks
 
-	size_t size = vector_count((vector*)parser->statements);
+	size_t size = vector_count((vector*)state->statements);
 	// search backwards for a block
 	for(size_t i = size; i > 0; i--) {
 		//AST_Statement* itr = parser->statements->start + i;
 		//if (!statement_is_block(*itr) || itr->) continue;
 
 
-		parser_pop_token(parser);
+		tok++;
 		return (AST_Statement){.type=AST_STATEMENT_TYPE_BLOCK_END};
 	}
 
@@ -389,38 +392,34 @@ AST_Statement parser_end_block(Parser* parser) {
 	return (AST_Statement){};
 }
 
-AST_Statement parser_find_variable(Parser* parser) {
-	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "parser_find_variable");
-	return (AST_Statement){};
+PARSER_RET parser_find_variable(PARSER_PARAMS) {
+	return parser_missing(PARSER_ERR_ARGS, "parser_find_variable");
 }
 
 
-AST_Statement parser_var_decl(Parser* parser) {
-	Token name_tok = parser_peek_token(parser);
-	wak_assert(name_tok.type == TOKEN_TYPE_IDENTIFIER);
+PARSER_RET parser_var_decl(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_IDENTIFIER);
 	// TODO: check for repeat declarations
 	const char* name = name_tok.identifier;
-	parser_pop_token(parser);
+	tok++;
 
-	Token colon_tok = parser_peek_token(parser);
-	wak_assert(colon_tok.type == TOKEN_TYPE_TOKEN && colon_tok.token == TOKEN_COLON);
-	parser_pop_token(parser);
+	wak_assert(tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_COLON);
+	tok++;
 
-	Token type_tok = parser_peek_token(parser);
-	if (type_tok.type != TOKEN_TYPE_TOKEN) {
+	if (tok->type != TOKEN_TYPE_TOKEN) {
 		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "expected token");
 		return (AST_Statement){};
 	}
-	if (type_tok.token == TOKEN_EQUALS) {
+	if (tok->token == TOKEN_EQUALS) {
 		parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "type inference");
-		return (AST_Statement){};
+		return parser_missing("type inference");
 	}
 	AST_Data_Type data_type = parser_data_type(parser);
 	if (data_type == AST_DATA_TYPE_UNKNOWN) {
 		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "not a type");	
 		return (AST_Statement){};
 	}
-	parser_pop_token(parser);
+	tok++;
 
 	AST_Statement_Declare decl;
 	decl.name = name;
@@ -453,57 +452,49 @@ AST_Statement parser_var_decl(Parser* parser) {
 }
 
 
-AST_Statement parser_func_decl(Parser* parser) {
-	{
-		Token func_tok = parser_peek_token(parser);
-		wak_assert_msg(func_tok.type == TOKEN_TYPE_TOKEN && func_tok.token == TOKEN_KEYWORD_FUNC, "expected tok: func");
-		parser_pop_token(parser);
-	}
+PARSER_RET parser_func_decl(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_KEYWORD_FUNC);
+	tok++;
 
-	Token name_tok = parser_peek_token(parser);
-	if (name_tok.type != TOKEN_TYPE_IDENTIFIER) {
+	if (tok->type != TOKEN_TYPE_IDENTIFIER) {
 		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "missing function name");
 		return (AST_Statement){};
 	}
 	
-	const char* name = name_tok.identifier;
-	parser_pop_token(parser);
+	const char* name = tok->identifier;
+	tok++;
 
-	{
-		Token open_paren = parser_peek_token(parser);
-		if (open_paren.type != TOKEN_TYPE_TOKEN || open_paren.token != TOKEN_OPEN_PAREN) {
-			parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "missing '(' after func name");
-			return (AST_Statement){};
-		}
-		parser_pop_token(parser);
 
-		Token close_paren = parser_peek_token(parser);	
-		if (close_paren.type == TOKEN_TYPE_IDENTIFIER) {
-			parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "function arguments");
-			return (AST_Statement){};
-		}
-		if (close_paren.type != TOKEN_TYPE_TOKEN || close_paren.token != TOKEN_CLOSE_PAREN) {
-			parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "missing ')' after function");
-			return (AST_Statement){};
-		}
-		parser_pop_token(parser);
+	if (tok->type != TOKEN_TYPE_TOKEN || tok->token != TOKEN_OPEN_PAREN) {
+		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "missing '(' after func name");
+		return (AST_Statement){};
 	}
+	tok++;
 
+	if (tok->type == TOKEN_TYPE_IDENTIFIER) {
+		parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "function arguments");
+		return (AST_Statement){};
+	}
+	if (tok->type != TOKEN_TYPE_TOKEN || tok->token != TOKEN_CLOSE_PAREN) {
+		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "missing ')' after function");
+		return (AST_Statement){};
+	}
+	tok++;
 	
-	Token type_or_brack = parser_peek_token(parser);
-	if (type_or_brack.type == TOKEN_TYPE_IDENTIFIER) {
+
+	if (tok->type == TOKEN_TYPE_IDENTIFIER) {
 		parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "only i32, f32, bool or void types implemented");
 		return (AST_Statement){};
 	}
-	if (type_or_brack.type != TOKEN_TYPE_TOKEN) {
+	if (tok->type != TOKEN_TYPE_TOKEN) {
 		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "expected token i32, f32, bool, or void");
 		return (AST_Statement){};
 	}
 
 	AST_Data_Type ret_type = AST_DATA_TYPE_VOID;
-	if (type_or_brack.token != TOKEN_OPEN_BRACKET) {
+	if (tok->token != TOKEN_OPEN_BRACKET) {
 		ret_type = parser_data_type(parser);
-		parser_pop_token(parser);
+		tok++;
 	}
 
 	if (ret_type == AST_DATA_TYPE_UNKNOWN) {
@@ -517,7 +508,7 @@ AST_Statement parser_func_decl(Parser* parser) {
 		return (AST_Statement){};
 	}
 	
-	parser_pop_token(parser);
+	tok++;
 
 	AST_Statement_Block_Function func;
 	func.name = name;
@@ -526,11 +517,10 @@ AST_Statement parser_func_decl(Parser* parser) {
 	return (AST_Statement){AST_STATEMENT_TYPE_BLOCK_FUNCTION, .s_block_function=func};
 }
 
-AST_Data_Type parser_data_type(Parser* parser) {
-	Token tok = parser_peek_token(parser);
-	wak_assert_msg(tok.type == TOKEN_TYPE_TOKEN, "expected token of type token");
+AST_Data_Type parser_data_type(PARSER_PARAMS) {
+	wak_assert(tok->type == TOKEN_TYPE_TOKEN);
 
-	switch (tok.token)
+	switch (tok->token)
 	{
 	case TOKEN_KEYWORD_BOOL:
 		return AST_DATA_TYPE_BOOL;
@@ -545,31 +535,25 @@ AST_Data_Type parser_data_type(Parser* parser) {
 	}
 }
 
-AST_Statement parser_eof(Parser* parser) {
+PARSER_RET parser_eof(PARSER_PARAMS) {
 	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "parser_eof");
 	return (AST_Statement){};
 }
-AST_Statement parser_assign(Parser* parser) {
+PARSER_RET parser_assign(PARSER_PARAMS) {
 	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "parser_assign");
 	return (AST_Statement){};
 }
-AST_Statement parser_type_decl(Parser* parser) {
+PARSER_RET parser_type_decl(PARSER_PARAMS) {
 	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "parser_type");
 	return (AST_Statement){};
 }
-AST_Statement parser_void_call(Parser* parser) {
+PARSER_RET parser_void_call(PARSER_PARAMS) {
 	parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "parser_void_call");
 	return (AST_Statement){};
 }
 
-Token parser_peek_token(Parser* parser) {
-	return parser->tok_mod.tokens->start[parser->tok_index];
-}
-Token parser_peek_token_n(Parser* parser, size_t i) {
-	return parser->tok_mod.tokens->start[parser->tok_index + i];
-}
 
-Token parser_peek_token_skip_break(Parser* parser) {
+Token parser_peek_token_skip_break(PARSER_PARAMS) {
 	Token tok = parser_peek_token(parser);
 	while(tok.type == TOKEN_TYPE_TOKEN && tok.token == TOKEN_BREAK) {
 		parser_pop_token(parser);
@@ -578,12 +562,6 @@ Token parser_peek_token_skip_break(Parser* parser) {
 	return tok;
 }
 
-void parser_pop_token(Parser* parser) {
-	parser->tok_index++;
-}
-void parser_pop_token_n(Parser* parser, size_t i) {
-	parser->tok_index += i;
-}
 
 void parser_emit_error_impl(Parser* parser, AST_Error_Code code, const char* msg, const char* file, unsigned int line) {
 	AST_Error err = (AST_Error){ code, msg, file, line };

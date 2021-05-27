@@ -1,12 +1,11 @@
 #ifndef _WAK_LANG_PARSER_H
 #define _WAK_LANG_PARSER_H
 
-#include <wak_lang/ast/error.h>
 #include <wak_lang/ast/block.h>
-#include <wak_lang/ast/statement.h>
+#include <wak_lang/ir/statement.h>
 #include <wak_lang/token_module.h>
 
-
+DEFINE_VECTOR(vector_statement, IR_Statement);
 typedef struct
 {
 	

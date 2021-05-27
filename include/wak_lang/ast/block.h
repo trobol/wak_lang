@@ -3,7 +3,7 @@
 #include <wak_lib/vector.h>
 #include <wak_lang/token.h>
 
-#include "statement.h"
+#include <wak_lang/ir/statement.h>
 #include "variable.h"
 
 DEFINE_VECTOR(vector_var, AST_Variable);
