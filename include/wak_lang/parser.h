@@ -7,7 +7,6 @@
 
 
 DEFINE_VECTOR(vector_statement, IR_Statement);
-DEFINE_VECTOR(vector_error, parse_err);
 typedef struct
 {
 	

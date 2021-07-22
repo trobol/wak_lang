@@ -1,3 +1,6 @@
+#if false
+// old parser
+
 #include <wak_lang/parser.h>
 #include <wak_lang/token_module.h>
 
@@ -626,3 +629,6 @@ void parser_print_error(Parser* parser, AST_Error err) {
 	// print out location error created from
 	printf("\ngenerated from:  %s:%i\n", err.file, err.line);
 }
+
+
+#endif

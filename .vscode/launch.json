@@ -6,7 +6,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/build/wak_lang",
-			"args": ["../long_example_file.txt"],
+			"args": ["../example_file.txt"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}/build/",
 			"environment": [],

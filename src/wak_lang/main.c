@@ -53,15 +53,15 @@ int main(int argc, char *argv[]) {
 		print_token(token_fp, tok, pos);	
 	}
 
-	fclose(token_fp);
-	token_module_free(&module);
+
 	
 
 	timer_start(TIMER_PARSE);
 	printf("\n\nPARSER OUTPUT:\n");
-	//Parsed_Module parsed_mod = parse(module);
+	Parsed_Module parsed_mod = parse(module);
 	
-
+	fclose(token_fp);
+	token_module_free(&module);
 
 	timer_end(TIMER_PARSE);
 	
