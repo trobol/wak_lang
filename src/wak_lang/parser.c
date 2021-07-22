@@ -3,7 +3,7 @@
 
 #include <wak_lib/vector.h>
 #include <wak_lib/assert.h>
-#include <wak_lib/array.h>
+#include <wak_lib/def.h>
 
 #include <wak_lang/ast/expression.h>
 #include <wak_lang/ast/statement_debug.h>
@@ -37,17 +37,18 @@ typedef struct {
 } Parser;
 
 #define PARSER_PARAMS wak_parse_state* state, Token* tok 
-#define PARSER_ERR_PARAMS PARSER_PARAMS, unsigned int line
-
 #define PARSER_ARGS state, tok
+
+
+#define PARSER_ERR_PARAMS PARSER_PARAMS, unsigned int line
 #define PARSER_ERR_ARGS PARSER_ARGS, __LINE__
 
 #define PARSER_RET Token*
 
 typedef PARSER_RET (*parser_error_handler)(PARSER_PARAMS, unsigned int line);
 
-PARSER_RET parser_append(PARSER_PARAMS, IR_Statement statement);
-
+inline PARSER_RET parser_append(PARSER_PARAMS, IR_Statement statement);
+PARSER_RET parser_append_dispatch(PARSER_PARAMS, IR_Statement statement);
 
 
 PARSER_RET parser_dispatch(PARSER_PARAMS);
@@ -74,6 +75,7 @@ PARSER_RET parser_error_impl(PARSER_PARAMS, parser_error_handler handler, unsign
 PARSER_RET parser_missing(PARSER_ERR_PARAMS, const char* msg);
 PARSER_RET parser_err_fatal(PARSER_PARAMS);
 
+
 #define DEFINE_ERROR_FUNC(name) PARSER_RET error_handle_##name(PARSER_PARAMS, unsigned int line) 
 
 Parsed_Module parse(Token_Module module) {
@@ -97,11 +99,6 @@ PARSER_RET parser_dispatch(PARSER_PARAMS) {
 	}
 
 	return parser_next(PARSER_ARGS);
-}
-
-PARSER_RET err_handle_unexpected_literal(PARSER_ERR_PARAMS) {
-
-
 }
 
 
@@ -329,7 +326,6 @@ PARSER_RET parser_expr_iden(PARSER_PARAMS) {
 }
 
 
-
 // TODO: fix how this searches
 //		 this also wont handle constants
 PARSER_RET parser_expr_var(PARSER_PARAMS) {
@@ -347,30 +343,27 @@ PARSER_RET parser_expr_var(PARSER_PARAMS) {
 		if (cmp != 0) continue;
 
 		tok++;
-		return (AST_Value){.type=AST_VALUE_TYPE_INSTR_REF, .u_index=i};
+
+		IR_Statement var = { .type=IR_STATEMENT_TYPE_VAR_REF, .s_var_ref={i}};
+		return parser_append(PARSER_ARGS, var);
 	}
 
 	printf("could not find variable: %s", name);
-	return 
+	return tok;
 }
 
 PARSER_RET parser_expr_call(PARSER_PARAMS) {
 	wak_assert( tok->type == TOKEN_TYPE_IDENTIFIER);
 	
-	return parser_missing("expression call");
+	return parser_missing(PARSER_ERR_ARGS, "expression call");
 }
 
 PARSER_RET parser_return(PARSER_PARAMS) {
 	wak_assert(tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_KEYWORD_RETURN);
 
 	tok++;
-	AST_Value value = parser_expr(parser);
-
-	if (value.type == AST_VALUE_TYPE_NULL)
-		return (AST_Statement){};
-
-	AST_Statement_Return ret = (AST_Statement_Return) { .value = value };
-	return (AST_Statement){AST_STATEMENT_TYPE_RETURN, .s_return=ret};
+	
+	return parser_append(PARSER_ARGS, (IR_Statement){ IR_STATEMENT_TYPE_RETURN });
 }
 
 PARSER_RET parser_end_block(PARSER_PARAMS) {
@@ -385,11 +378,12 @@ PARSER_RET parser_end_block(PARSER_PARAMS) {
 
 
 		tok++;
-		return (AST_Statement){.type=AST_STATEMENT_TYPE_BLOCK_END};
+		IR_Statement statement = { .type=IR_STATEMENT_TYPE_BLOCK_END };
+		parser_append_dispatch(PARSER_ARGS, statement);
 	}
 
-	parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "unexpected '}'");
-	return (AST_Statement){};
+	//parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "unexpected '}'");
+	return parser_dispatch(PARSER_ARGS);
 }
 
 PARSER_RET parser_find_variable(PARSER_PARAMS) {
@@ -397,49 +391,59 @@ PARSER_RET parser_find_variable(PARSER_PARAMS) {
 }
 
 
+// TODO: fatal error
+// TODO: skip to end of declaration
+PARSER_RET parser_var_decl_err_missing_infer(PARSER_PARAMS) {
+	//
+
+	return tok++;
+}
+
+// TODO: fatal error
+// TODO: skip to end of declaration
+PARSER_RET parser_var_decl_err_invalid_type(PARSER_PARAMS) {
+	
+	return tok++;
+}
+
 PARSER_RET parser_var_decl(PARSER_PARAMS) {
 	wak_assert(tok->type == TOKEN_TYPE_IDENTIFIER);
 	// TODO: check for repeat declarations
-	const char* name = name_tok.identifier;
+	const char* name = tok->identifier;
 	tok++;
 
 	wak_assert(tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_COLON);
 	tok++;
 
-	if (tok->type != TOKEN_TYPE_TOKEN) {
-		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "expected token");
-		return (AST_Statement){};
+	if (tok->type != TOKEN_TYPE_TOKEN || tok->token == TOKEN_EQUALS) {
+		return parser_var_decl_err_missing_infer(PARSER_ARGS);
 	}
-	if (tok->token == TOKEN_EQUALS) {
-		parser_emit_error(parser, AST_ERROR_UNIMPLEMENTED, "type inference");
-		return parser_missing("type inference");
-	}
-	AST_Data_Type data_type = parser_data_type(parser);
+
+	AST_Data_Type data_type = parser_data_type(PARSER_ARGS);
 	if (data_type == AST_DATA_TYPE_UNKNOWN) {
-		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "not a type");	
-		return (AST_Statement){};
+		return parser_var_decl_err_invalid_type_type(PARSER_ARGS);
 	}
 	tok++;
 
-	AST_Statement_Declare decl;
-	decl.name = name;
-	decl.data_type = data_type;
+	IR_Statement_Declare decl = {.data_type= data_type, .name= name };
 
-	AST_Statement decl_statement = (AST_Statement){AST_STATEMENT_TYPE_DECLARE, .s_declare=decl};
 
-	Token next = parser_peek_token(parser);
-	if (next.type == TOKEN_TYPE_TOKEN && next.token == TOKEN_SEMICOLON) {
-		parser_pop_token(parser);
-		return decl_statement;
+	IR_Statement decl_statement = {.type=IR_STATEMENT_TYPE_DECLARE, .s_declare=decl};
+
+
+	if (tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_SEMICOLON) {
+		tok++;
+		return parser_append_dispatch(PARSER_ARGS, decl_statement);
 	}
 	
-	if (next.type != TOKEN_TYPE_TOKEN || next.token != TOKEN_EQUALS) {
-		parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "expected ';' or '='");
-		return (AST_Statement){};
+	if (tok->type != TOKEN_TYPE_TOKEN || tok->token != TOKEN_EQUALS) {
+		//parser_emit_error(parser, AST_ERROR_INVALID_SYNTAX, "expected ';' or '='");
+		return parser_dispatch(PARSER_ARGS);
 	}
-	parser_pop_token(parser);
-	size_t index = vector_count((vector*)parser->statements);
-	parser_append(parser, decl_statement);
+	tok++;
+	
+	size_t index = vector_count((vector*)state->statements);
+	parser_append(PARSER_ARGS, decl_statement);
 
 	AST_Value value = parser_expr(parser);
 

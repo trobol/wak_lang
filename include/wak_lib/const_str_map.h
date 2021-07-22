@@ -2,7 +2,6 @@
 #define _WAK_LIB_CONST_STR_MAP_H
 #include <wak_lib/assert.h>
 #include <wak_lib/mem.h>
-#include <wak_lib/array.h>
 
 #include <stdlib.h>
 #include <stddef.h>

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <wak_lib/def.h>
 
 /*
  * functions to help with safe memory management
@@ -55,9 +56,9 @@ inline void* _array_alloc_impl(size_t count, size_t elem_size) {
 inline void* _array_realloc_impl(void* ptr, size_t count, size_t elem_size) {
 	alloc_prevent_overflow(count, elem_size);
 	size_t alloc_size = count * elem_size;
-	void* ptr = realloc(ptr, alloc_size);
-	if (WAK_UNLIKELY(ptr == 0)) exit(ENOMEM);
-	return ptr;
+	void* out = realloc(ptr, alloc_size);
+	if (WAK_UNLIKELY(out == 0)) exit(ENOMEM);
+	return out;
 }
 
 
