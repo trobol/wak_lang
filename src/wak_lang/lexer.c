@@ -3,7 +3,6 @@
 #include <wak_lib/mem.h>
 #include <wak_lib/const_str_map.h>
 #include <wak_lib/def.h>
-#include <wak_lib/array.h>
 
 #include <stdbool.h>
 #include <string.h>
@@ -331,13 +330,9 @@ uint32_t lex_assign_tok(WAK_LEX_PARAMS, Token tok) {
 }
 
 uint32_t lex_expand_assign_tok(WAK_LEX_PARAMS, Token tok) {
-	uint64_t tok_size = tok_capacity * sizeof(Token) * 2;
-	state->tok_array = realloc(state->tok_array, tok_size);
-
-	uint64_t pos_size = tok_capacity * sizeof(Token_Pos) * 2;
-	state->pos_array = realloc(state->pos_array, pos_size);
-
 	tok_capacity *= 2;
+	state->tok_array = array_realloc(state->tok_array, tok_capacity * 2, Token);
+	state->pos_array = array_realloc(state->pos_array, tok_capacity * 2, Token_Pos);
 
 	return lex_assign_tok(WAK_LEX_ARGS, tok);
 }
