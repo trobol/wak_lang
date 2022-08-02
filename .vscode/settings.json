@@ -1,6 +1,7 @@
 {
 	"disasexpl.associations": {
-		"**/*.c": "${workspaceFolder}/build/${fileBasenameNoExtension}.s"
+		"**/*.c": "${workspaceFolder}/build/${relativeFileDirname}/${fileBasenameNoExtension}.s"
 	},
-	"C_Cpp.autoAddFileAssociations": false
+	"C_Cpp.autoAddFileAssociations": false,
+	"C_Cpp.errorSquiggles": "Disabled"
 }
