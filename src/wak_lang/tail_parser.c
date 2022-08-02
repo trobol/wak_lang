@@ -39,6 +39,8 @@ typedef struct {
 #define PTC_ERR_PARAMS PTC_PARAMS, unsigned int line
 #define PTC_ERR_ARGS PTC_ARGS, __LINE__
 
+#define PTC_NEXT ++tok
+
 
 inline PTC_RET ptc_append(PTC_PARAMS, IR_Statement statement);
 PTC_RET ptc_append_dispatch(PTC_PARAMS, IR_Statement statement);
@@ -124,11 +126,37 @@ PTC_RET ptc_token(PTC_PARAMS) {
 }
 
 PTC_RET ptc_break(PTC_PARAMS) {
-	tok++;
+	PTC_NEXT;
 	return ptc_dispatch(PTC_ARGS);
 }
 
 PTC_RET ptc_func_decl(PTC_PARAMS) {
+	wak_assert( tok->type == TOKEN_TYPE_TOKEN && tok->token == TOKEN_KEYWORD_FUNC );
+
+	PTC_NEXT;
+	if ( tok->type == TOKEN_TYPE_IDENTIFIER )
+		return ptc_err_fatal(PTC_ERR_ARGS, "missing function name");
+
+	const char* name = tok->identifier;
+
+	PTC_NEXT;
+	if ( tok->type != TOKEN_TYPE_TOKEN || tok->token != TOKEN_OPEN_PAREN )
+		return ptc_err_fatal( PTC_ERR_ARGS, "missing '(' after function name" );
+
+	PTC_NEXT;
+	// TODO: parse function arguments
+	if ( tok->type == TOKEN_TYPE_IDENTIFIER ) 
+		return ptc_err_fatal( PTC_ERR_ARGS, "function arguments not yet implemented");
+	
+	if ( tok->type != TOKEN_TYPE_TOKEN || tok->token != TOKEN_CLOSE_PAREN )
+		return ptc_err_fatal(  PTC_ERR_ARGS, "missing ')' after function");
+	
+	PTC_NEXT;
+	if ( tok->type != TOKEN_TYPE_IDENTIFIER ) 
+		return ptc_err_fatal( PTC_ERR_ARGS, "expected function return type" );
+
+	
+
 	return ptc_err_fatal(PTC_ERR_ARGS, "unimplemented");
 }
 
